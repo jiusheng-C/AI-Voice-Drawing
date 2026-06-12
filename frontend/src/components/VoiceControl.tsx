@@ -39,6 +39,7 @@ export function VoiceControl({ projectId, onPlan, onStatus }: VoiceControlProps)
     recorder.onstop = () => {
       stream.getTracks().forEach((track) => track.stop())
       socket.send(JSON.stringify({ type: 'voice_end', text: '画一个蓝色圆形' }))
+      onStatus('Processing voice command')
     }
     recorder.start()
     setIsRecording(true)

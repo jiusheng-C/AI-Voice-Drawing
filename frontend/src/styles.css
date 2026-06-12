@@ -186,6 +186,10 @@ button {
   cursor: pointer;
 }
 
+.canvas-toolbar span {
+  pointer-events: none;
+}
+
 .canvas-surface {
   position: relative;
   overflow: hidden;
