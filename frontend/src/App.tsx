@@ -4,6 +4,7 @@ import { saveCanvasState } from './api/client'
 import { executeCommandPlan } from './commands/executeCommandPlan'
 import { FabricCanvas } from './components/FabricCanvas'
 import { TextCommandDebug } from './components/TextCommandDebug'
+import { VoiceControl } from './components/VoiceControl'
 import type { CanvasState } from './types/canvas'
 import type { CommandPlan } from './types/commands'
 
@@ -171,6 +172,7 @@ export function App() {
             <strong>Feedback</strong>
             <span>{lastFeedback}</span>
           </div>
+          <VoiceControl projectId={projectId} onPlan={applyCommandPlan} onStatus={setLastFeedback} />
           <TextCommandDebug projectId={projectId} onPlan={applyCommandPlan} />
         </aside>
       </section>
