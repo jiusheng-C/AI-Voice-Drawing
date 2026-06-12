@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/canvas"
+	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/commands"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/config"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/db"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/httpapi"
@@ -13,6 +14,7 @@ import (
 func main() {
 	cfg := config.Load()
 	router := httpapi.NewRouter()
+	httpapi.RegisterTextCommandRoutes(router, commands.NewRuleParser())
 
 	conn, err := db.Open(cfg)
 	if err != nil {
