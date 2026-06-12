@@ -1,0 +1,26 @@
+{
+  "command_id": "cmd_001",
+  "source": "text_debug",
+  "asr_text": "画一个蓝色圆形",
+  "mode": "execute",
+  "commands": [
+    {
+      "id": "step_1",
+      "type": "create_shape",
+      "args": {
+        "shape": "circle",
+        "fill": "#2563eb",
+        "x": 640,
+        "y": 360,
+        "radius": 80
+      },
+      "risk": "low",
+      "confidence": 0.95
+    }
+  ],
+  "requires_confirmation": false,
+  "requires_clarification": false,
+  "confidence": 0.95,
+  "risk_level": "low",
+  "feedback": "已识别为创建蓝色圆形。"
+}
