@@ -188,8 +188,8 @@ export function App() {
 
         <section className="canvas-area" aria-label="Drawing workspace">
           <div className="canvas-toolbar">
-            <span><Circle size={16} /> Circle</span>
-            <span><Square size={16} /> Rectangle</span>
+            <span><Circle size={16} /> Voice creates circles</span>
+            <span><Square size={16} /> Voice creates rectangles</span>
             <button type="button" onClick={exportPNG} title="Export PNG">
               <Download size={16} /> PNG
             </button>
