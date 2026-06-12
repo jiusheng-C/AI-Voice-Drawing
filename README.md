@@ -1,4 +1,4 @@
-﻿# AI Voice Drawing
+# AI Voice Drawing
 
 AI Voice Drawing is a browser-based drawing workspace controlled by voice.
 The MVP uses a Go + Gin backend, MySQL persistence, a React + TypeScript + Vite frontend, and Fabric.js for canvas rendering.
@@ -54,35 +54,6 @@ curl -X POST http://localhost:8080/api/v1/projects \
 curl http://localhost:8080/api/v1/projects
 ```
 
-Command schema types are defined in `backend/internal/commands` and `frontend/src/types/commands.ts`.
-An example command plan is available at `docs/command-schema.example.json`.
-
-Text command parser:
-
-```bash
-curl -X POST http://localhost:8080/api/v1/projects/1/text-commands \
-  -H "Content-Type: application/json" \
-  -d '{"text":"画一个蓝色圆形"}'
-```
-
-Model center tables are created by the database migration command and seeded with mock ASR, NLU, and TTS models.
-
-Model center API:
-
-```bash
-curl http://localhost:8080/api/v1/ai/models
-curl http://localhost:8080/api/v1/users/me/ai-preferences
-```
-
-AIHub mock provider interfaces live in `backend/internal/aihub`.
-The mock provider can complete ASR, NLU, and TTS without external AI credentials.
-
-Voice WebSocket:
-
-```text
-ws://localhost:8080/api/v1/projects/1/voice-stream
-```
-
 ### Database Migrations
 
 ```bash
@@ -92,8 +63,15 @@ go run ./cmd/migrate
 
 Frontend commands will be enabled by later PRs.
 
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 ## Delivery Rules
 
 All feature work must be delivered through small GitHub pull requests.
 Each merged PR must keep the main branch runnable for the functionality available at that stage.
-
