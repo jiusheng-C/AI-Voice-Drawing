@@ -54,15 +54,8 @@ curl -X POST http://localhost:8080/api/v1/projects \
 curl http://localhost:8080/api/v1/projects
 ```
 
-Canvas state API:
-
-```bash
-curl -X PUT http://localhost:8080/api/v1/projects/1/canvas-state \
-  -H "Content-Type: application/json" \
-  -d '{"width":1280,"height":720,"objects":[{"object_key":"obj_1","object_type":"circle","name":"Blue circle","properties":{"fill":"#2563eb","left":540,"top":260,"radius":80}}]}'
-
-curl http://localhost:8080/api/v1/projects/1/canvas-state
-```
+Command schema types are defined in `backend/internal/commands` and `frontend/src/types/commands.ts`.
+An example command plan is available at `docs/command-schema.example.json`.
 
 ### Database Migrations
 
