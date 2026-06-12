@@ -1,0 +1,255 @@
+:root {
+  color: #111827;
+  background: #eef2f7;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+}
+
+.workspace {
+  display: grid;
+  grid-template-rows: 56px minmax(0, 1fr) 78px;
+  min-height: 100vh;
+  background: #eef2f7;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 20px;
+  border-bottom: 1px solid #d6dde8;
+  background: #f8fafc;
+}
+
+.brand,
+.status-strip,
+.status-strip span,
+.panel-title,
+.canvas-toolbar,
+.canvas-toolbar span {
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  gap: 10px;
+  font-weight: 700;
+}
+
+.status-strip {
+  gap: 10px;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.status-strip span {
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d6dde8;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 280px;
+  gap: 1px;
+  min-height: 0;
+  background: #d6dde8;
+}
+
+.object-panel,
+.model-panel,
+.canvas-area {
+  min-width: 0;
+  background: #f8fafc;
+}
+
+.object-panel,
+.model-panel {
+  padding: 16px;
+}
+
+.panel-title {
+  gap: 8px;
+  min-height: 30px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.object-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.object-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid #d6dde8;
+  border-radius: 6px;
+  color: #111827;
+  background: #ffffff;
+  text-align: left;
+}
+
+.object-index {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: #e5e7eb;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.object-meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.object-meta strong,
+.model-row strong,
+.timeline-step strong {
+  font-size: 13px;
+}
+
+.object-meta small,
+.model-row span,
+.timeline-step span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.canvas-area {
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr);
+  padding: 14px;
+}
+
+.canvas-toolbar {
+  gap: 8px;
+  align-content: center;
+}
+
+.canvas-toolbar span {
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d6dde8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.canvas-surface {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background:
+    linear-gradient(#e5e7eb 1px, transparent 1px),
+    linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+    #ffffff;
+  background-size: 32px 32px;
+  box-shadow: inset 0 0 0 1px #ffffff;
+}
+
+.shape {
+  position: absolute;
+  box-shadow: 0 18px 35px rgb(15 23 42 / 14%);
+}
+
+.circle-shape {
+  left: 42%;
+  top: 30%;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+.rect-shape {
+  left: 52%;
+  top: 50%;
+  width: 220px;
+  height: 132px;
+  border-radius: 6px;
+  background: #dc2626;
+}
+
+.model-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.voice-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border-top: 1px solid #d6dde8;
+  background: #d6dde8;
+}
+
+.timeline-step {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 0 18px;
+  background: #f8fafc;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .topbar,
+  .status-strip {
+    flex-wrap: wrap;
+  }
+
+  .topbar {
+    padding: 12px;
+  }
+
+  .main-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(420px, 1fr) auto;
+  }
+
+  .voice-timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
