@@ -41,6 +41,7 @@ export function App() {
   const [redoStack, setRedoStack] = useState<CanvasState[]>([])
   const [selectedObjectKey, setSelectedObjectKey] = useState(canvasState.objects[0]?.object_key ?? '')
   const [lastFeedback, setLastFeedback] = useState('Ready')
+  const [pendingPlan, setPendingPlan] = useState<CommandPlan | null>(null)
   const objectRows = useMemo(
     () =>
       canvasState.objects.map((object, index) => ({
@@ -54,6 +55,19 @@ export function App() {
   )
 
   async function applyCommandPlan(plan: CommandPlan) {
+    if (plan.requires_clarification || plan.commands.length === 0) {
+      setLastFeedback(plan.feedback || 'Clarification required.')
+      speak(plan.feedback || 'Clarification required.')
+      return
+    }
+    if (!pendingPlan && (plan.requires_confirmation || plan.risk_level === 'high')) {
+      setPendingPlan(plan)
+      setLastFeedback(plan.feedback || 'Confirmation required.')
+      speak(plan.feedback || 'Confirmation required.')
+      return
+    }
+    setPendingPlan(null)
+
     const firstType = plan.commands[0]?.type
     if (firstType === 'undo') {
       applyUndo(plan.feedback)
@@ -76,6 +90,18 @@ export function App() {
     } catch {
       setLastFeedback(`${result.message} Canvas sync pending.`)
     }
+  }
+
+  function confirmPendingPlan() {
+    if (pendingPlan) {
+      void applyCommandPlan(pendingPlan)
+    }
+  }
+
+  function cancelPendingPlan() {
+    setPendingPlan(null)
+    setLastFeedback('Command canceled.')
+    speak('Command canceled.')
   }
 
   function applyUndo(feedback: string) {
@@ -175,6 +201,16 @@ export function App() {
             <strong>Feedback</strong>
             <span>{lastFeedback}</span>
           </div>
+          {pendingPlan ? (
+            <div className="confirmation-panel">
+              <strong>Confirmation</strong>
+              <span>{pendingPlan.feedback}</span>
+              <div className="confirmation-actions">
+                <button type="button" onClick={confirmPendingPlan}>Confirm</button>
+                <button type="button" onClick={cancelPendingPlan}>Cancel</button>
+              </div>
+            </div>
+          ) : null}
           <VoiceControl projectId={projectId} onPlan={applyCommandPlan} onStatus={(message) => {
             setLastFeedback(message)
             speak(message)
