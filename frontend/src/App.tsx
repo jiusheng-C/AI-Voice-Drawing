@@ -1,4 +1,5 @@
 import { Activity, Bot, Circle, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { FabricCanvas } from './components/FabricCanvas'
 import type { CanvasState } from './types/canvas'
 
@@ -7,11 +8,6 @@ const timeline = [
   { label: '识别', state: 'Mock ASR' },
   { label: '理解', state: '规则解析' },
   { label: '执行', state: '等待指令' },
-]
-
-const objects = [
-  { id: '01', name: '主圆形', type: 'Circle', tone: '蓝色' },
-  { id: '02', name: '流程框', type: 'Rect', tone: '红色' },
 ]
 
 const canvasState: CanvasState = {
@@ -34,6 +30,19 @@ const canvasState: CanvasState = {
 }
 
 export function App() {
+  const [selectedObjectKey, setSelectedObjectKey] = useState(canvasState.objects[0]?.object_key ?? '')
+  const objectRows = useMemo(
+    () =>
+      canvasState.objects.map((object, index) => ({
+        id: String(index + 1).padStart(2, '0'),
+        key: object.object_key,
+        name: object.name ?? object.object_key,
+        type: object.object_type,
+        tone: describeFill(object.properties.fill),
+      })),
+    [],
+  )
+
   return (
     <main className="workspace">
       <header className="topbar">
@@ -55,8 +64,13 @@ export function App() {
             <span>对象</span>
           </div>
           <div className="object-list">
-            {objects.map((item) => (
-              <button className="object-row" key={item.id} type="button">
+            {objectRows.map((item) => (
+              <button
+                className={`object-row ${item.key === selectedObjectKey ? 'is-selected' : ''}`}
+                key={item.key}
+                type="button"
+                onClick={() => setSelectedObjectKey(item.key)}
+              >
                 <span className="object-index">{item.id}</span>
                 <span className="object-meta">
                   <strong>{item.name}</strong>
@@ -107,4 +121,17 @@ export function App() {
       </footer>
     </main>
   )
+}
+
+function describeFill(value: unknown) {
+  if (value === '#2563eb') {
+    return '蓝色'
+  }
+  if (value === '#dc2626') {
+    return '红色'
+  }
+  if (value === '#16a34a') {
+    return '绿色'
+  }
+  return typeof value === 'string' ? value : '默认'
 }
