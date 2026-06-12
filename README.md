@@ -1,4 +1,4 @@
-# AI Voice Drawing
+﻿# AI Voice Drawing
 
 AI Voice Drawing is a browser-based drawing workspace controlled by voice.
 The MVP uses a Go + Gin backend, MySQL persistence, a React + TypeScript + Vite frontend, and Fabric.js for canvas rendering.
@@ -74,6 +74,9 @@ curl http://localhost:8080/api/v1/ai/models
 curl http://localhost:8080/api/v1/users/me/ai-preferences
 ```
 
+AIHub mock provider interfaces live in `backend/internal/aihub`.
+The mock provider can complete ASR, NLU, and TTS without external AI credentials.
+
 ### Database Migrations
 
 ```bash
@@ -87,3 +90,4 @@ Frontend commands will be enabled by later PRs.
 
 All feature work must be delivered through small GitHub pull requests.
 Each merged PR must keep the main branch runnable for the functionality available at that stage.
+
