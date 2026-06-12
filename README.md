@@ -36,10 +36,22 @@ go mod tidy
 go run ./cmd/server
 ```
 
+Set `HTTP_PORT` if port `8080` is already in use.
+
 Health check:
 
 ```bash
 curl http://localhost:8080/healthz
+```
+
+Project API:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Voice demo","description":"MVP drawing project"}'
+
+curl http://localhost:8080/api/v1/projects
 ```
 
 ### Database Migrations
