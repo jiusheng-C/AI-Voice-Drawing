@@ -36,6 +36,8 @@ const initialCanvasState: CanvasState = {
 export function App() {
   const projectId = 1
   const [canvasState, setCanvasState] = useState(initialCanvasState)
+  const [undoStack, setUndoStack] = useState<CanvasState[]>([])
+  const [redoStack, setRedoStack] = useState<CanvasState[]>([])
   const [selectedObjectKey, setSelectedObjectKey] = useState(canvasState.objects[0]?.object_key ?? '')
   const [lastFeedback, setLastFeedback] = useState('Ready')
   const objectRows = useMemo(
@@ -51,7 +53,19 @@ export function App() {
   )
 
   async function applyCommandPlan(plan: CommandPlan) {
+    const firstType = plan.commands[0]?.type
+    if (firstType === 'undo') {
+      applyUndo(plan.feedback)
+      return
+    }
+    if (firstType === 'redo') {
+      applyRedo(plan.feedback)
+      return
+    }
+
     const result = executeCommandPlan(canvasState, selectedObjectKey, plan)
+    setUndoStack((previous) => [...previous, canvasState])
+    setRedoStack([])
     setCanvasState(result.state)
     setSelectedObjectKey(result.selectedObjectKey)
     setLastFeedback(result.message)
@@ -60,6 +74,32 @@ export function App() {
     } catch {
       setLastFeedback(`${result.message} Canvas sync pending.`)
     }
+  }
+
+  function applyUndo(feedback: string) {
+    const previous = undoStack.at(-1)
+    if (!previous) {
+      setLastFeedback('Nothing to undo.')
+      return
+    }
+    setUndoStack((stack) => stack.slice(0, -1))
+    setRedoStack((stack) => [...stack, canvasState])
+    setCanvasState(previous)
+    setSelectedObjectKey(previous.objects.at(-1)?.object_key ?? '')
+    setLastFeedback(feedback || 'Undo complete.')
+  }
+
+  function applyRedo(feedback: string) {
+    const next = redoStack.at(-1)
+    if (!next) {
+      setLastFeedback('Nothing to redo.')
+      return
+    }
+    setRedoStack((stack) => stack.slice(0, -1))
+    setUndoStack((stack) => [...stack, canvasState])
+    setCanvasState(next)
+    setSelectedObjectKey(next.objects.at(-1)?.object_key ?? '')
+    setLastFeedback(feedback || 'Redo complete.')
   }
 
   return (
