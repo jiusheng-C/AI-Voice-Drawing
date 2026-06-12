@@ -65,6 +65,8 @@ curl -X POST http://localhost:8080/api/v1/projects/1/text-commands \
   -d '{"text":"画一个蓝色圆形"}'
 ```
 
+Model center tables are created by the database migration command and seeded with mock ASR, NLU, and TTS models.
+
 ### Database Migrations
 
 ```bash
