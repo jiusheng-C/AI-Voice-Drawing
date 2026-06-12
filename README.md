@@ -67,6 +67,13 @@ curl -X POST http://localhost:8080/api/v1/projects/1/text-commands \
 
 Model center tables are created by the database migration command and seeded with mock ASR, NLU, and TTS models.
 
+Model center API:
+
+```bash
+curl http://localhost:8080/api/v1/ai/models
+curl http://localhost:8080/api/v1/users/me/ai-preferences
+```
+
 ### Database Migrations
 
 ```bash
