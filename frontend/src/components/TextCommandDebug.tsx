@@ -1,14 +1,16 @@
 import { FormEvent, useState } from 'react'
 import { SendHorizontal } from 'lucide-react'
 import { postTextCommand } from '../api/client'
+import type { CommandPlan } from '../types/commands'
 
 interface TextCommandDebugProps {
   projectId: number
+  onPlan: (plan: CommandPlan) => Promise<void> | void
 }
 
-export function TextCommandDebug({ projectId }: TextCommandDebugProps) {
+export function TextCommandDebug({ projectId, onPlan }: TextCommandDebugProps) {
   const [text, setText] = useState('画一个蓝色圆形')
-  const [result, setResult] = useState('等待调试指令')
+  const [result, setResult] = useState('Waiting for a debug command')
   const [isLoading, setIsLoading] = useState(false)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -16,7 +18,9 @@ export function TextCommandDebug({ projectId }: TextCommandDebugProps) {
     setIsLoading(true)
     try {
       const response = await postTextCommand(projectId, text)
-      setResult(JSON.stringify(response.command_plan, null, 2))
+      const plan = response.command_plan as CommandPlan
+      await onPlan(plan)
+      setResult(JSON.stringify(plan, null, 2))
     } catch (error) {
       setResult(error instanceof Error ? error.message : 'Command parser failed')
     } finally {
@@ -26,7 +30,7 @@ export function TextCommandDebug({ projectId }: TextCommandDebugProps) {
 
   return (
     <form className="debug-command" onSubmit={submit}>
-      <label htmlFor="debug-command-input">开发调试指令</label>
+      <label htmlFor="debug-command-input">Debug command</label>
       <div className="debug-input-row">
         <input
           id="debug-command-input"
@@ -34,7 +38,7 @@ export function TextCommandDebug({ projectId }: TextCommandDebugProps) {
           onChange={(event) => setText(event.target.value)}
           placeholder="画一个蓝色圆形"
         />
-        <button type="submit" disabled={isLoading} title="发送调试指令">
+        <button type="submit" disabled={isLoading} title="Send debug command">
           <SendHorizontal size={17} />
         </button>
       </div>

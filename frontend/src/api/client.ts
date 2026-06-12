@@ -13,3 +13,17 @@ export async function postTextCommand(projectId: number, text: string) {
 
   return (await response.json()) as { command_plan: unknown }
 }
+
+export async function saveCanvasState(projectId: number, state: unknown) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/projects/${projectId}/canvas-state`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Canvas sync failed with status ${response.status}`)
+  }
+
+  return response.json()
+}
