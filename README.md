@@ -57,6 +57,14 @@ curl http://localhost:8080/api/v1/projects
 Command schema types are defined in `backend/internal/commands` and `frontend/src/types/commands.ts`.
 An example command plan is available at `docs/command-schema.example.json`.
 
+Text command parser:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/projects/1/text-commands \
+  -H "Content-Type: application/json" \
+  -d '{"text":"画一个蓝色圆形"}'
+```
+
 ### Database Migrations
 
 ```bash
