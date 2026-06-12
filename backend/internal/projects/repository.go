@@ -21,6 +21,10 @@ func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
+func DefaultUserID() uint64 {
+	return defaultUserID
+}
+
 type CreateProjectInput struct {
 	Name         string
 	Description  string
