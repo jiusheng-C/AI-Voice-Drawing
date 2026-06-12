@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/ai"
+	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/aihub"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/canvas"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/commands"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/config"
@@ -26,6 +27,7 @@ func main() {
 		httpapi.RegisterCanvasRoutes(router, canvas.NewRepository(conn))
 		httpapi.RegisterAIRoutes(router, ai.NewRepository(conn))
 	}
+	httpapi.RegisterVoiceWSRoutes(router, aihub.NewMockHub())
 
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {
 		log.Fatalf("server stopped: %v", err)
