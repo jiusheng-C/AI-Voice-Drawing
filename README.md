@@ -77,6 +77,12 @@ curl http://localhost:8080/api/v1/users/me/ai-preferences
 AIHub mock provider interfaces live in `backend/internal/aihub`.
 The mock provider can complete ASR, NLU, and TTS without external AI credentials.
 
+Voice WebSocket:
+
+```text
+ws://localhost:8080/api/v1/projects/1/voice-stream
+```
+
 ### Database Migrations
 
 ```bash
