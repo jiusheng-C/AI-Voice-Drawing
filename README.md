@@ -19,6 +19,15 @@ docs/      Implementation notes, API contracts, and demo scripts
 
 ## Local Development
 
+### MySQL
+
+```bash
+docker compose up -d mysql
+```
+
+The local database listens on `127.0.0.1:13306` by default and creates the `voice_drawing` database.
+Set `MYSQL_PORT` to override the host port. The default application DSN is defined in `.env.example`.
+
 ### Backend
 
 ```bash
@@ -33,7 +42,7 @@ Health check:
 curl http://localhost:8080/healthz
 ```
 
-MySQL and frontend commands will be enabled by later PRs.
+Frontend commands will be enabled by later PRs.
 
 ## Delivery Rules
 
