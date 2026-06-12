@@ -1,37 +1,43 @@
 import { Activity, Bot, Circle, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { saveCanvasState } from './api/client'
+import { executeCommandPlan } from './commands/executeCommandPlan'
 import { FabricCanvas } from './components/FabricCanvas'
 import { TextCommandDebug } from './components/TextCommandDebug'
 import type { CanvasState } from './types/canvas'
+import type { CommandPlan } from './types/commands'
 
 const timeline = [
-  { label: '监听', state: '就绪' },
-  { label: '识别', state: 'Mock ASR' },
-  { label: '理解', state: '规则解析' },
-  { label: '执行', state: '等待指令' },
+  { label: 'Listen', state: 'Ready' },
+  { label: 'ASR', state: 'Mock ASR' },
+  { label: 'NLU', state: 'Rule parser' },
+  { label: 'Execute', state: 'Waiting' },
 ]
 
-const canvasState: CanvasState = {
+const initialCanvasState: CanvasState = {
   width: 1280,
   height: 720,
   objects: [
     {
       object_key: 'obj_1',
       object_type: 'circle',
-      name: '主圆形',
+      name: 'Main circle',
       properties: { fill: '#2563eb', left: 540, top: 300, radius: 82 },
     },
     {
       object_key: 'obj_2',
       object_type: 'rect',
-      name: '流程框',
+      name: 'Flow box',
       properties: { fill: '#dc2626', left: 760, top: 430, width: 250, height: 145 },
     },
   ],
 }
 
 export function App() {
+  const projectId = 1
+  const [canvasState, setCanvasState] = useState(initialCanvasState)
   const [selectedObjectKey, setSelectedObjectKey] = useState(canvasState.objects[0]?.object_key ?? '')
+  const [lastFeedback, setLastFeedback] = useState('Ready')
   const objectRows = useMemo(
     () =>
       canvasState.objects.map((object, index) => ({
@@ -41,8 +47,20 @@ export function App() {
         type: object.object_type,
         tone: describeFill(object.properties.fill),
       })),
-    [],
+    [canvasState.objects],
   )
+
+  async function applyCommandPlan(plan: CommandPlan) {
+    const result = executeCommandPlan(canvasState, selectedObjectKey, plan)
+    setCanvasState(result.state)
+    setSelectedObjectKey(result.selectedObjectKey)
+    setLastFeedback(result.message)
+    try {
+      await saveCanvasState(projectId, result.state)
+    } catch {
+      setLastFeedback(`${result.message} Canvas sync pending.`)
+    }
+  }
 
   return (
     <main className="workspace">
@@ -52,17 +70,17 @@ export function App() {
           <span>AI Voice Drawing</span>
         </div>
         <div className="status-strip">
-          <span><Mic size={16} /> 麦克风待授权</span>
-          <span><Activity size={16} /> Mock 快速模式</span>
-          <span><Volume2 size={16} /> 语音反馈开启</span>
+          <span><Mic size={16} /> Microphone pending</span>
+          <span><Activity size={16} /> Mock fast mode</span>
+          <span><Volume2 size={16} /> Voice feedback on</span>
         </div>
       </header>
 
       <section className="main-grid">
-        <aside className="object-panel" aria-label="对象导航">
+        <aside className="object-panel" aria-label="Object navigation">
           <div className="panel-title">
             <MousePointer2 size={17} />
-            <span>对象</span>
+            <span>Objects</span>
           </div>
           <div className="object-list">
             {objectRows.map((item) => (
@@ -82,20 +100,20 @@ export function App() {
           </div>
         </aside>
 
-        <section className="canvas-area" aria-label="绘图工作台">
+        <section className="canvas-area" aria-label="Drawing workspace">
           <div className="canvas-toolbar">
-            <span><Circle size={16} /> 圆形</span>
-            <span><Square size={16} /> 矩形</span>
+            <span><Circle size={16} /> Circle</span>
+            <span><Square size={16} /> Rectangle</span>
           </div>
           <div className="canvas-surface">
             <FabricCanvas state={canvasState} />
           </div>
         </section>
 
-        <aside className="model-panel" aria-label="模型中心预览">
+        <aside className="model-panel" aria-label="Model center preview">
           <div className="panel-title">
             <PanelRight size={17} />
-            <span>模型中心</span>
+            <span>Model Center</span>
           </div>
           <div className="model-row">
             <strong>ASR</strong>
@@ -109,7 +127,11 @@ export function App() {
             <strong>TTS</strong>
             <span>Mock Browser TTS</span>
           </div>
-          <TextCommandDebug projectId={1} />
+          <div className="model-row">
+            <strong>Feedback</strong>
+            <span>{lastFeedback}</span>
+          </div>
+          <TextCommandDebug projectId={projectId} onPlan={applyCommandPlan} />
         </aside>
       </section>
 
@@ -126,14 +148,8 @@ export function App() {
 }
 
 function describeFill(value: unknown) {
-  if (value === '#2563eb') {
-    return '蓝色'
-  }
-  if (value === '#dc2626') {
-    return '红色'
-  }
-  if (value === '#16a34a') {
-    return '绿色'
-  }
-  return typeof value === 'string' ? value : '默认'
+  if (value === '#2563eb') return 'Blue'
+  if (value === '#dc2626') return 'Red'
+  if (value === '#16a34a') return 'Green'
+  return typeof value === 'string' ? value : 'Default'
 }
