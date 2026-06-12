@@ -1,8 +1,8 @@
-import { Activity, Bot, Circle, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Activity, Bot, Circle, Download, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { saveCanvasState } from './api/client'
 import { executeCommandPlan } from './commands/executeCommandPlan'
-import { FabricCanvas } from './components/FabricCanvas'
+import { FabricCanvas, type FabricCanvasHandle } from './components/FabricCanvas'
 import { ModelCenterPanel } from './components/ModelCenterPanel'
 import { TextCommandDebug } from './components/TextCommandDebug'
 import { VoiceControl } from './components/VoiceControl'
@@ -37,6 +37,7 @@ const initialCanvasState: CanvasState = {
 
 export function App() {
   const projectId = 1
+  const fabricRef = useRef<FabricCanvasHandle | null>(null)
   const [canvasState, setCanvasState] = useState(initialCanvasState)
   const [undoStack, setUndoStack] = useState<CanvasState[]>([])
   const [redoStack, setRedoStack] = useState<CanvasState[]>([])
@@ -133,6 +134,20 @@ export function App() {
     speak(feedback || 'Redo complete.')
   }
 
+  function exportPNG() {
+    const dataURL = fabricRef.current?.exportPNG()
+    if (!dataURL) {
+      setLastFeedback('Export is not ready.')
+      return
+    }
+    const link = document.createElement('a')
+    link.href = dataURL
+    link.download = 'ai-voice-drawing.png'
+    link.click()
+    setLastFeedback('PNG exported.')
+    speak('PNG exported.')
+  }
+
   return (
     <main className="workspace">
       <header className="topbar">
@@ -175,9 +190,12 @@ export function App() {
           <div className="canvas-toolbar">
             <span><Circle size={16} /> Circle</span>
             <span><Square size={16} /> Rectangle</span>
+            <button type="button" onClick={exportPNG} title="Export PNG">
+              <Download size={16} /> PNG
+            </button>
           </div>
           <div className="canvas-surface">
-            <FabricCanvas state={canvasState} />
+            <FabricCanvas ref={fabricRef} state={canvasState} />
           </div>
         </section>
 
