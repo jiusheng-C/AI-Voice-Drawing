@@ -70,6 +70,7 @@ export function App() {
     setCanvasState(result.state)
     setSelectedObjectKey(result.selectedObjectKey)
     setLastFeedback(result.message)
+    speak(result.message)
     try {
       await saveCanvasState(projectId, result.state)
     } catch {
@@ -88,6 +89,7 @@ export function App() {
     setCanvasState(previous)
     setSelectedObjectKey(previous.objects.at(-1)?.object_key ?? '')
     setLastFeedback(feedback || 'Undo complete.')
+    speak(feedback || 'Undo complete.')
   }
 
   function applyRedo(feedback: string) {
@@ -101,6 +103,7 @@ export function App() {
     setCanvasState(next)
     setSelectedObjectKey(next.objects.at(-1)?.object_key ?? '')
     setLastFeedback(feedback || 'Redo complete.')
+    speak(feedback || 'Redo complete.')
   }
 
   return (
@@ -172,7 +175,10 @@ export function App() {
             <strong>Feedback</strong>
             <span>{lastFeedback}</span>
           </div>
-          <VoiceControl projectId={projectId} onPlan={applyCommandPlan} onStatus={setLastFeedback} />
+          <VoiceControl projectId={projectId} onPlan={applyCommandPlan} onStatus={(message) => {
+            setLastFeedback(message)
+            speak(message)
+          }} />
           <TextCommandDebug projectId={projectId} onPlan={applyCommandPlan} />
         </aside>
       </section>
@@ -194,4 +200,14 @@ function describeFill(value: unknown) {
   if (value === '#dc2626') return 'Red'
   if (value === '#16a34a') return 'Green'
   return typeof value === 'string' ? value : 'Default'
+}
+
+function speak(text: string) {
+  if (!('speechSynthesis' in window) || !text) {
+    return
+  }
+  window.speechSynthesis.cancel()
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'zh-CN'
+  window.speechSynthesis.speak(utterance)
 }
