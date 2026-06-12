@@ -42,6 +42,13 @@ Health check:
 curl http://localhost:8080/healthz
 ```
 
+### Database Migrations
+
+```bash
+cd backend
+go run ./cmd/migrate
+```
+
 Frontend commands will be enabled by later PRs.
 
 ## Delivery Rules
