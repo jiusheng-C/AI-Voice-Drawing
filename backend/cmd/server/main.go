@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/canvas"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/config"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/db"
 	"github.com/jiusheng-C/AI-Voice-Drawing/backend/internal/httpapi"
@@ -19,6 +20,7 @@ func main() {
 	} else {
 		defer conn.Close()
 		httpapi.RegisterProjectRoutes(router, projects.NewRepository(conn))
+		httpapi.RegisterCanvasRoutes(router, canvas.NewRepository(conn))
 	}
 
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {
