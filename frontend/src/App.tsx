@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { saveCanvasState } from './api/client'
 import { executeCommandPlan } from './commands/executeCommandPlan'
 import { FabricCanvas } from './components/FabricCanvas'
+import { ModelCenterPanel } from './components/ModelCenterPanel'
 import { TextCommandDebug } from './components/TextCommandDebug'
 import { VoiceControl } from './components/VoiceControl'
 import type { CanvasState } from './types/canvas'
@@ -185,18 +186,7 @@ export function App() {
             <PanelRight size={17} />
             <span>Model Center</span>
           </div>
-          <div className="model-row">
-            <strong>ASR</strong>
-            <span>Mock ASR Fast</span>
-          </div>
-          <div className="model-row">
-            <strong>NLU</strong>
-            <span>Mock Rule Parser</span>
-          </div>
-          <div className="model-row">
-            <strong>TTS</strong>
-            <span>Mock Browser TTS</span>
-          </div>
+          <ModelCenterPanel />
           <div className="model-row">
             <strong>Feedback</strong>
             <span>{lastFeedback}</span>
