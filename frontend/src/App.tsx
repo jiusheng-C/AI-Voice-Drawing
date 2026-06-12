@@ -1,6 +1,7 @@
 import { Activity, Bot, Circle, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { FabricCanvas } from './components/FabricCanvas'
+import { TextCommandDebug } from './components/TextCommandDebug'
 import type { CanvasState } from './types/canvas'
 
 const timeline = [
@@ -108,6 +109,7 @@ export function App() {
             <strong>TTS</strong>
             <span>Mock Browser TTS</span>
           </div>
+          <TextCommandDebug projectId={1} />
         </aside>
       </section>
 
