@@ -71,6 +71,27 @@ npm install
 npm run dev
 ```
 
+## MVP Demo Flow
+
+1. Start MySQL with `docker compose up -d mysql`.
+2. Run migrations with `cd backend && go run ./cmd/migrate`.
+3. Start the backend with `cd backend && go run ./cmd/server`.
+4. Start the frontend with `cd frontend && npm run dev`.
+5. Open `http://localhost:5173`.
+6. Use the development text command box for deterministic checks:
+   - `画一个蓝色圆形`
+   - `画一个红色矩形`
+   - `把它改成绿色`
+   - `撤销`
+7. Use Start voice and Stop voice to run the mock voice path.
+8. Use PNG in the canvas toolbar to export the current canvas.
+
+Run the local demo check:
+
+```powershell
+./scripts/demo-check.ps1
+```
+
 ## Delivery Rules
 
 All feature work must be delivered through small GitHub pull requests.
