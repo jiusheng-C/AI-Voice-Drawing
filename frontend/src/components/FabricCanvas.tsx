@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { Canvas, Circle, Rect, Textbox } from 'fabric'
 import type { CanvasObjectState, CanvasState } from '../types/canvas'
 
@@ -6,9 +6,17 @@ interface FabricCanvasProps {
   state: CanvasState
 }
 
-export function FabricCanvas({ state }: FabricCanvasProps) {
+export interface FabricCanvasHandle {
+  exportPNG: () => string
+}
+
+export const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function FabricCanvas({ state }, ref) {
   const canvasElement = useRef<HTMLCanvasElement | null>(null)
   const fabricCanvas = useRef<Canvas | null>(null)
+
+  useImperativeHandle(ref, () => ({
+    exportPNG: () => fabricCanvas.current?.toDataURL({ format: 'png', multiplier: 2 }) ?? '',
+  }))
 
   useEffect(() => {
     if (!canvasElement.current) {
@@ -52,7 +60,7 @@ export function FabricCanvas({ state }: FabricCanvasProps) {
       <canvas ref={canvasElement} />
     </div>
   )
-}
+})
 
 function createFabricObject(object: CanvasObjectState) {
   const props = object.properties
