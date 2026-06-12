@@ -184,27 +184,22 @@ button {
   box-shadow: inset 0 0 0 1px #ffffff;
 }
 
-.shape {
+.fabric-stage {
   position: absolute;
-  box-shadow: 0 18px 35px rgb(15 23 42 / 14%);
-}
-
-.circle-shape {
-  left: 42%;
-  top: 30%;
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  background: #2563eb;
-}
-
-.rect-shape {
-  left: 52%;
+  left: 50%;
   top: 50%;
-  width: 220px;
-  height: 132px;
-  border-radius: 6px;
-  background: #dc2626;
+  width: min(100% - 40px, 1280px);
+  aspect-ratio: 16 / 9;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  box-shadow: 0 20px 45px rgb(15 23 42 / 12%);
+}
+
+.fabric-stage canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .model-row {

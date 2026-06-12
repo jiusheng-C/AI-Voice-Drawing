@@ -1,4 +1,6 @@
 import { Activity, Bot, Circle, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
+import { FabricCanvas } from './components/FabricCanvas'
+import type { CanvasState } from './types/canvas'
 
 const timeline = [
   { label: '监听', state: '就绪' },
@@ -11,6 +13,25 @@ const objects = [
   { id: '01', name: '主圆形', type: 'Circle', tone: '蓝色' },
   { id: '02', name: '流程框', type: 'Rect', tone: '红色' },
 ]
+
+const canvasState: CanvasState = {
+  width: 1280,
+  height: 720,
+  objects: [
+    {
+      object_key: 'obj_1',
+      object_type: 'circle',
+      name: '主圆形',
+      properties: { fill: '#2563eb', left: 540, top: 300, radius: 82 },
+    },
+    {
+      object_key: 'obj_2',
+      object_type: 'rect',
+      name: '流程框',
+      properties: { fill: '#dc2626', left: 760, top: 430, width: 250, height: 145 },
+    },
+  ],
+}
 
 export function App() {
   return (
@@ -52,8 +73,7 @@ export function App() {
             <span><Square size={16} /> 矩形</span>
           </div>
           <div className="canvas-surface">
-            <div className="shape circle-shape" />
-            <div className="shape rect-shape" />
+            <FabricCanvas state={canvasState} />
           </div>
         </section>
 
