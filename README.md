@@ -19,13 +19,21 @@ docs/      Implementation notes, API contracts, and demo scripts
 
 ## Local Development
 
-The full local commands will be enabled by later PRs:
+### Backend
 
 ```bash
-docker compose up -d mysql
-go run ./backend/cmd/server
-cd frontend && npm run dev
+cd backend
+go mod tidy
+go run ./cmd/server
 ```
+
+Health check:
+
+```bash
+curl http://localhost:8080/healthz
+```
+
+MySQL and frontend commands will be enabled by later PRs.
 
 ## Delivery Rules
 
