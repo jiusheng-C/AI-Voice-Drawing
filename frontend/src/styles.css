@@ -116,6 +116,17 @@ button {
   color: #111827;
   background: #ffffff;
   text-align: left;
+  cursor: pointer;
+}
+
+.object-row.is-selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 14%);
+}
+
+.object-row.is-selected .object-index {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .object-index {
