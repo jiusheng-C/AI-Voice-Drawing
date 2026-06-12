@@ -220,6 +220,57 @@ button {
   border-bottom: 1px solid #e5e7eb;
 }
 
+.model-center-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.model-center-list fieldset {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #d6dde8;
+  border-radius: 6px;
+}
+
+.model-center-list legend {
+  padding: 0 4px;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.model-center-list label {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.model-center-list label small {
+  grid-column: 2;
+  color: #6b7280;
+}
+
+.model-center-list button {
+  height: 34px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.model-center-list p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
 .debug-command {
   display: grid;
   gap: 8px;
