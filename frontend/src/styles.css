@@ -249,6 +249,42 @@ button {
   background: #dc2626;
 }
 
+.confirmation-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.confirmation-panel strong {
+  font-size: 13px;
+}
+
+.confirmation-panel span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.confirmation-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.confirmation-actions button {
+  height: 32px;
+  border: 1px solid #d97706;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #92400e;
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .debug-command label {
   color: #374151;
   font-size: 13px;
