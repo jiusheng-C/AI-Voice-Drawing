@@ -1,9 +1,10 @@
 import { Activity, Bot, Circle, Download, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import { saveCanvasState } from './api/client'
+import { defaultRuntimeConfig, saveCanvasState, type RuntimeConfig } from './api/client'
 import { executeCommandPlan } from './commands/executeCommandPlan'
 import { FabricCanvas, type FabricCanvasHandle } from './components/FabricCanvas'
 import { ModelCenterPanel } from './components/ModelCenterPanel'
+import { RuntimeConfigPanel } from './components/RuntimeConfigPanel'
 import { TextCommandDebug } from './components/TextCommandDebug'
 import { VoiceControl } from './components/VoiceControl'
 import type { CanvasState } from './types/canvas'
@@ -44,6 +45,17 @@ export function App() {
   const [selectedObjectKey, setSelectedObjectKey] = useState(canvasState.objects[0]?.object_key ?? '')
   const [lastFeedback, setLastFeedback] = useState('Ready')
   const [pendingPlan, setPendingPlan] = useState<CommandPlan | null>(null)
+  const [runtimeConfig, setRuntimeConfig] = useState<RuntimeConfig>(() => {
+    const saved = localStorage.getItem('ai_voice_drawing_runtime_config')
+    if (!saved) {
+      return defaultRuntimeConfig
+    }
+    try {
+      return { ...defaultRuntimeConfig, ...JSON.parse(saved) }
+    } catch {
+      return defaultRuntimeConfig
+    }
+  })
   const objectRows = useMemo(
     () =>
       canvasState.objects.map((object, index) => ({
@@ -88,10 +100,16 @@ export function App() {
     setLastFeedback(result.message)
     speak(result.message)
     try {
-      await saveCanvasState(projectId, result.state)
+      await saveCanvasState(projectId, result.state, runtimeConfig)
     } catch {
       setLastFeedback(`${result.message} Canvas sync pending.`)
     }
+  }
+
+  function updateRuntimeConfig(next: RuntimeConfig) {
+    setRuntimeConfig(next)
+    localStorage.setItem('ai_voice_drawing_runtime_config', JSON.stringify(next))
+    setLastFeedback(next.mockMode ? '已切换到本地 mock 演示。' : '已切换到真实后端连接。')
   }
 
   function confirmPendingPlan() {
@@ -157,7 +175,7 @@ export function App() {
         </div>
         <div className="status-strip">
           <span><Mic size={16} /> Microphone pending</span>
-          <span><Activity size={16} /> Mock fast mode</span>
+          <span><Activity size={16} /> {runtimeConfig.mockMode ? 'Mock mode' : 'Backend mode'}</span>
           <span><Volume2 size={16} /> Voice feedback on</span>
         </div>
       </header>
@@ -204,7 +222,8 @@ export function App() {
             <PanelRight size={17} />
             <span>Model Center</span>
           </div>
-          <ModelCenterPanel />
+          <RuntimeConfigPanel config={runtimeConfig} onChange={updateRuntimeConfig} />
+          <ModelCenterPanel config={runtimeConfig} />
           <div className="model-row">
             <strong>Feedback</strong>
             <span>{lastFeedback}</span>
@@ -219,11 +238,11 @@ export function App() {
               </div>
             </div>
           ) : null}
-          <VoiceControl projectId={projectId} onPlan={applyCommandPlan} onStatus={(message) => {
+          <VoiceControl config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} onStatus={(message) => {
             setLastFeedback(message)
             speak(message)
           }} />
-          <TextCommandDebug projectId={projectId} onPlan={applyCommandPlan} />
+          <TextCommandDebug config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} />
         </aside>
       </section>
 

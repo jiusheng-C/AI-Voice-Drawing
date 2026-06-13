@@ -1,14 +1,15 @@
 import { FormEvent, useState } from 'react'
 import { SendHorizontal } from 'lucide-react'
-import { postTextCommand } from '../api/client'
+import { postTextCommand, type RuntimeConfig } from '../api/client'
 import type { CommandPlan } from '../types/commands'
 
 interface TextCommandDebugProps {
+  config: RuntimeConfig
   projectId: number
   onPlan: (plan: CommandPlan) => Promise<void> | void
 }
 
-export function TextCommandDebug({ projectId, onPlan }: TextCommandDebugProps) {
+export function TextCommandDebug({ config, projectId, onPlan }: TextCommandDebugProps) {
   const [text, setText] = useState('画一个蓝色圆形')
   const [result, setResult] = useState('Waiting for a debug command')
   const [isLoading, setIsLoading] = useState(false)
@@ -17,7 +18,7 @@ export function TextCommandDebug({ projectId, onPlan }: TextCommandDebugProps) {
     event.preventDefault()
     setIsLoading(true)
     try {
-      const response = await postTextCommand(projectId, text)
+      const response = await postTextCommand(projectId, text, config)
       const plan = response.command_plan as CommandPlan
       await onPlan(plan)
       setResult(JSON.stringify(plan, null, 2))

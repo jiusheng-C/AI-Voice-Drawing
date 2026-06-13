@@ -25,11 +25,11 @@ go run ./cmd/migrate
 
 Write-Host "Starting backend on 18080..."
 $backendPath = Get-Location
-$job = Start-Job -ScriptBlock {
-  Set-Location $using:backendPath
-  $env:HTTP_PORT = "18080"
-  go run ./cmd/server
-}
+$backendOut = Join-Path $root "demo-backend.out.log"
+$backendErr = Join-Path $root "demo-backend.err.log"
+$previousHTTPPort = $env:HTTP_PORT
+$env:HTTP_PORT = "18080"
+$backendProcess = Start-Process -FilePath "go" -ArgumentList "run", "./cmd/server" -WorkingDirectory $backendPath -RedirectStandardOutput $backendOut -RedirectStandardError $backendErr -WindowStyle Hidden -PassThru
 
 try {
   Start-Sleep -Seconds 5
@@ -48,8 +48,10 @@ try {
   }
 }
 finally {
-  Stop-Job $job -ErrorAction SilentlyContinue
-  Remove-Job $job -Force -ErrorAction SilentlyContinue
+  if ($backendProcess -and -not $backendProcess.HasExited) {
+    taskkill /PID $backendProcess.Id /T /F | Out-Null
+  }
+  $env:HTTP_PORT = $previousHTTPPort
   Pop-Location
 }
 

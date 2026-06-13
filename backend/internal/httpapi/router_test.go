@@ -30,3 +30,23 @@ func TestHealthz(t *testing.T) {
 		t.Fatalf("unexpected service %q", body["service"])
 	}
 }
+
+func TestCORSPreflight(t *testing.T) {
+	router := NewRouter()
+	req := httptest.NewRequest(http.MethodOptions, "/api/v1/projects/1/text-commands", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", rec.Code)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:5173" {
+		t.Fatalf("unexpected allow origin %q", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Methods"); got == "" {
+		t.Fatal("expected CORS methods header")
+	}
+}
