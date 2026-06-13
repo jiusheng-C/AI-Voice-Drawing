@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchAIModels, saveAIPreferences, type AIModel } from '../api/client'
+import { fetchAIModels, saveAIPreferences, type AIModel, type RuntimeConfig } from '../api/client'
 
 const capabilities = ['asr', 'nlu', 'tts'] as const
 
-export function ModelCenterPanel() {
+interface ModelCenterPanelProps {
+  config: RuntimeConfig
+}
+
+export function ModelCenterPanel({ config }: ModelCenterPanelProps) {
   const [models, setModels] = useState<AIModel[]>([])
   const [selected, setSelected] = useState<Record<string, number>>({})
-  const [status, setStatus] = useState('Loading models')
+  const [status, setStatus] = useState(config.mockMode ? 'Using local mock models' : 'Loading models from backend')
 
   useEffect(() => {
-    fetchAIModels()
+    fetchAIModels(config)
       .then((response) => {
         setModels(response.models)
         setSelected(
@@ -20,10 +24,10 @@ export function ModelCenterPanel() {
             }),
           ),
         )
-        setStatus('Mock models ready')
+        setStatus(config.mockMode ? 'Mock models ready' : 'Backend models ready')
       })
       .catch((error) => setStatus(error instanceof Error ? error.message : 'Model load failed'))
-  }, [])
+  }, [config])
 
   const grouped = useMemo(
     () =>
@@ -43,8 +47,13 @@ export function ModelCenterPanel() {
       primary_model_id: modelId,
       fallback_model_ids: [],
     }))
-    await saveAIPreferences(preferences)
-    setStatus('Model preferences saved')
+    try {
+      await saveAIPreferences(preferences, config)
+      setStatus(config.mockMode ? 'Model mode saved locally' : 'Model preferences saved')
+    } catch (error) {
+      localStorage.setItem('ai_voice_drawing_model_preferences', JSON.stringify(preferences))
+      setStatus(error instanceof Error ? `${error.message}; saved locally` : 'Backend save failed; saved locally')
+    }
   }
 
   return (

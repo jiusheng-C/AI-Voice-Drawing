@@ -235,6 +235,43 @@ button {
   margin-top: 10px;
 }
 
+.runtime-config {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d6dde8;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.runtime-config label {
+  display: grid;
+  gap: 5px;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runtime-config input[type="text"],
+.runtime-config label:not(.toggle-row) input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid #d6dde8;
+  border-radius: 6px;
+  color: #111827;
+  background: #f8fafc;
+  font-size: 12px;
+}
+
+.runtime-config .toggle-row {
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
 .model-center-list fieldset {
   display: grid;
   gap: 6px;
@@ -307,6 +344,19 @@ button {
 .voice-button.is-recording {
   border-color: #dc2626;
   background: #dc2626;
+}
+
+.voice-control {
+  display: grid;
+  gap: 8px;
+}
+
+.voice-status {
+  display: grid;
+  gap: 4px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .confirmation-panel {
