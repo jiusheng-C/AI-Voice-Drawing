@@ -55,6 +55,30 @@ func TestRuleParserCreateEllipseAndArrow(t *testing.T) {
 	}
 }
 
+func TestRuleParserCreateAdditionalShapes(t *testing.T) {
+	cases := []struct {
+		name  string
+		text  string
+		shape string
+	}{
+		{name: "triangle", text: "画一个黄色三角形", shape: "triangle"},
+		{name: "diamond", text: "画一个蓝色菱形", shape: "diamond"},
+		{name: "star", text: "画一个红色五角星", shape: "star"},
+		{name: "sticky", text: "创建一个便签", shape: "sticky"},
+		{name: "process", text: "创建一个流程节点", shape: "process"},
+		{name: "image", text: "创建一个图片占位", shape: "image_placeholder"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			step := firstStep(t, NewRuleParser().ParseText(tc.text))
+			if step.Type != CommandCreateShape || step.Args["shape"] != tc.shape {
+				t.Fatalf("unexpected shape step %#v", step)
+			}
+		})
+	}
+}
+
 func TestRuleParserObjectOperations(t *testing.T) {
 	cases := []struct {
 		name string

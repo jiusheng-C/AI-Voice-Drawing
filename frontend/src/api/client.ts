@@ -141,6 +141,113 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
     }
   }
 
+  if (normalized.includes('图片') || normalized.includes('插图') || normalized.includes('占位图')) {
+    return {
+      ...base,
+      feedback: '已创建图片占位。',
+      commands: [
+        mockStep('create_shape', {
+          shape: 'image_placeholder',
+          fill: '#e2e8f0',
+          stroke: '#64748b',
+          x: 640,
+          y: 360,
+          width: 260,
+          height: 170,
+          text: '图片占位',
+        }),
+      ],
+    }
+  }
+
+  if (normalized.includes('便签') || normalized.includes('便利贴')) {
+    return {
+      ...base,
+      feedback: '已创建便签。',
+      commands: [
+        mockStep('create_shape', {
+          shape: 'sticky',
+          fill: '#fde68a',
+          stroke: '#f59e0b',
+          x: 640,
+          y: 360,
+          width: 220,
+          height: 160,
+          text: '便签',
+        }),
+      ],
+    }
+  }
+
+  if (normalized.includes('流程节点') || normalized.includes('流程框') || normalized.includes('节点')) {
+    return {
+      ...base,
+      feedback: '已创建流程节点。',
+      commands: [
+        mockStep('create_shape', {
+          shape: 'process',
+          fill: color.hex,
+          text: '流程节点',
+          text_fill: '#ffffff',
+          x: 640,
+          y: 360,
+          width: 260,
+          height: 120,
+        }),
+      ],
+    }
+  }
+
+  if (normalized.includes('三角形')) {
+    return {
+      ...base,
+      feedback: `已创建${color.name}三角形。`,
+      commands: [
+        mockStep('create_shape', {
+          shape: 'triangle',
+          fill: color.hex,
+          x: 640,
+          y: 360,
+          width: 180,
+          height: 160,
+        }),
+      ],
+    }
+  }
+
+  if (normalized.includes('菱形')) {
+    return {
+      ...base,
+      feedback: `已创建${color.name}菱形。`,
+      commands: [
+        mockStep('create_shape', {
+          shape: 'diamond',
+          fill: color.hex,
+          x: 640,
+          y: 360,
+          width: 200,
+          height: 160,
+        }),
+      ],
+    }
+  }
+
+  if (normalized.includes('星形') || normalized.includes('五角星')) {
+    return {
+      ...base,
+      feedback: `已创建${color.name}星形。`,
+      commands: [
+        mockStep('create_shape', {
+          shape: 'star',
+          fill: color.hex,
+          x: 640,
+          y: 360,
+          radius: 86,
+        }),
+      ],
+    }
+  }
+
   if (normalized.includes('复制') || normalized.includes('副本')) {
     return {
       ...base,
@@ -388,6 +495,12 @@ function parseShapeType(text: string) {
   if (text.includes('圆')) return 'circle'
   if (text.includes('箭头')) return 'arrow'
   if (text.includes('线')) return 'line'
+  if (text.includes('三角形')) return 'triangle'
+  if (text.includes('菱形')) return 'diamond'
+  if (text.includes('星形') || text.includes('五角星')) return 'star'
+  if (text.includes('便签') || text.includes('便利贴')) return 'sticky'
+  if (text.includes('流程节点') || text.includes('流程框') || text.includes('节点')) return 'process'
+  if (text.includes('图片') || text.includes('插图') || text.includes('占位图')) return 'image_placeholder'
   if (text.includes('文字') || text.includes('文本')) return 'text'
   return ''
 }

@@ -162,6 +162,37 @@ function createShape(step: CommandStep, index: number): CanvasObjectState {
     }
   }
 
+  if (shape === 'process') {
+    return {
+      ...base,
+      object_type: 'process',
+      properties: {
+        ...base.properties,
+        text: stringArg(step.args?.text, '流程节点'),
+        text_fill: stringArg(step.args?.text_fill, '#ffffff'),
+        width: numberArg(step.args?.width, 260),
+        height: numberArg(step.args?.height, 120),
+        stroke_width: numberArg(step.args?.stroke_width, 0),
+      },
+    }
+  }
+
+  if (shape === 'sticky') {
+    return {
+      ...base,
+      object_type: 'sticky',
+      properties: {
+        ...base.properties,
+        text: stringArg(step.args?.text, '便签'),
+        text_fill: stringArg(step.args?.text_fill, '#111827'),
+        width: numberArg(step.args?.width, 220),
+        height: numberArg(step.args?.height, 160),
+        stroke: stringArg(step.args?.stroke, '#f59e0b'),
+        stroke_width: numberArg(step.args?.stroke_width, 2),
+      },
+    }
+  }
+
   if (shape === 'ellipse') {
     return {
       ...base,
@@ -172,6 +203,45 @@ function createShape(step: CommandStep, index: number): CanvasObjectState {
         height: numberArg(step.args?.height, 150),
         rx: numberArg(step.args?.rx, 130),
         ry: numberArg(step.args?.ry, 75),
+      },
+    }
+  }
+
+  if (shape === 'triangle' || shape === 'diamond') {
+    return {
+      ...base,
+      object_type: shape,
+      properties: {
+        ...base.properties,
+        width: numberArg(step.args?.width, shape === 'triangle' ? 180 : 200),
+        height: numberArg(step.args?.height, 160),
+      },
+    }
+  }
+
+  if (shape === 'star') {
+    return {
+      ...base,
+      object_type: 'star',
+      properties: {
+        ...base.properties,
+        radius: numberArg(step.args?.radius, 86),
+      },
+    }
+  }
+
+  if (shape === 'image_placeholder') {
+    return {
+      ...base,
+      object_type: 'image_placeholder',
+      properties: {
+        ...base.properties,
+        fill: stringArg(step.args?.fill, '#e2e8f0'),
+        stroke: stringArg(step.args?.stroke, '#64748b'),
+        stroke_width: numberArg(step.args?.stroke_width, 2),
+        width: numberArg(step.args?.width, 260),
+        height: numberArg(step.args?.height, 170),
+        text: stringArg(step.args?.text, '图片占位'),
       },
     }
   }
@@ -321,6 +391,12 @@ function objectName(type: string, index: number) {
     ellipse: '椭圆',
     line: '线条',
     arrow: '箭头',
+    triangle: '三角形',
+    diamond: '菱形',
+    star: '星形',
+    sticky: '便签',
+    process: '流程节点',
+    image_placeholder: '图片占位',
   }
   return `${names[type] ?? '对象'} ${index}`
 }

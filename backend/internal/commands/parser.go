@@ -30,6 +30,81 @@ func (p RuleParser) ParseText(input string) CommandPlan {
 	if strings.Contains(text, "清空") || strings.Contains(text, "新建画布") {
 		return singleStepPlan(commandID, input, CommandCreateCanvas, nil, map[string]any{"width": 1280, "height": 720, "clear": true}, "已清空画布。")
 	}
+	if strings.Contains(text, "图片") || strings.Contains(text, "插图") || strings.Contains(text, "占位图") {
+		args := map[string]any{
+			"shape":  "image_placeholder",
+			"fill":   "#e2e8f0",
+			"stroke": "#64748b",
+			"x":      640,
+			"y":      360,
+			"width":  260,
+			"height": 170,
+			"text":   "图片占位",
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, "已识别为创建图片占位。")
+	}
+	if strings.Contains(text, "便签") || strings.Contains(text, "便利贴") {
+		args := map[string]any{
+			"shape":  "sticky",
+			"fill":   "#fde68a",
+			"stroke": "#f59e0b",
+			"x":      640,
+			"y":      360,
+			"width":  220,
+			"height": 160,
+			"text":   "便签",
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, "已识别为创建便签。")
+	}
+	if strings.Contains(text, "流程节点") || strings.Contains(text, "流程框") || strings.Contains(text, "节点") {
+		_, colorHex := parseColor(text)
+		args := map[string]any{
+			"shape":     "process",
+			"fill":      colorHex,
+			"text_fill": "#ffffff",
+			"x":         640,
+			"y":         360,
+			"width":     260,
+			"height":    120,
+			"text":      "流程节点",
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, "已识别为创建流程节点。")
+	}
+	if strings.Contains(text, "三角形") {
+		colorName, colorHex := parseColor(text)
+		args := map[string]any{
+			"shape":  "triangle",
+			"fill":   colorHex,
+			"x":      640,
+			"y":      360,
+			"width":  180,
+			"height": 160,
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s三角形。", colorName))
+	}
+	if strings.Contains(text, "菱形") {
+		colorName, colorHex := parseColor(text)
+		args := map[string]any{
+			"shape":  "diamond",
+			"fill":   colorHex,
+			"x":      640,
+			"y":      360,
+			"width":  200,
+			"height": 160,
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s菱形。", colorName))
+	}
+	if strings.Contains(text, "星形") || strings.Contains(text, "五角星") {
+		colorName, colorHex := parseColor(text)
+		args := map[string]any{
+			"shape":  "star",
+			"fill":   colorHex,
+			"x":      640,
+			"y":      360,
+			"radius": 86,
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s星形。", colorName))
+	}
 	if strings.Contains(text, "复制") || strings.Contains(text, "副本") {
 		target := &CommandTarget{Type: TargetReference, Reference: "selected_object"}
 		return singleStepPlan(commandID, input, CommandUngroupObjects, target, nil, "已识别为复制当前对象。")
@@ -170,6 +245,24 @@ func parseTarget(text string) *CommandTarget {
 	}
 	if strings.Contains(text, "箭头") {
 		return &CommandTarget{Type: TargetQuery, ObjectType: "arrow"}
+	}
+	if strings.Contains(text, "三角形") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "triangle"}
+	}
+	if strings.Contains(text, "菱形") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "diamond"}
+	}
+	if strings.Contains(text, "星形") || strings.Contains(text, "五角星") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "star"}
+	}
+	if strings.Contains(text, "便签") || strings.Contains(text, "便利贴") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "sticky"}
+	}
+	if strings.Contains(text, "流程节点") || strings.Contains(text, "流程框") || strings.Contains(text, "节点") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "process"}
+	}
+	if strings.Contains(text, "图片") || strings.Contains(text, "插图") || strings.Contains(text, "占位图") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "image_placeholder"}
 	}
 	if strings.Contains(text, "线") {
 		return &CommandTarget{Type: TargetQuery, ObjectType: "line"}
