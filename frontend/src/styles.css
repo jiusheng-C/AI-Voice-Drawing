@@ -164,14 +164,20 @@ button {
 }
 
 .canvas-area {
-  display: grid;
-  grid-template-rows: 48px minmax(0, 1fr);
-  padding: 14px;
+  position: relative;
+  display: block;
+  padding: 0;
 }
 
 .canvas-toolbar {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 14px;
+  right: 14px;
   gap: 8px;
   align-content: center;
+  flex-wrap: wrap;
 }
 
 .canvas-toolbar span,
@@ -195,11 +201,12 @@ button {
 }
 
 .canvas-surface {
-  position: relative;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
   min-height: 0;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border: 0;
+  border-radius: 0;
   background:
     linear-gradient(#e5e7eb 1px, transparent 1px),
     linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
@@ -211,8 +218,8 @@ button {
 .fabric-stage {
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: min(100% - 40px, 1280px);
+  top: calc(50vh - 56px);
+  width: min(calc(100% - 48px), 1280px, calc((100vh - 190px) * 16 / 9));
   aspect-ratio: 16 / 9;
   transform: translate(-50%, -50%);
   overflow: hidden;
@@ -516,6 +523,15 @@ button {
   .main-grid {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(420px, 1fr) auto;
+  }
+
+  .canvas-area {
+    min-height: 420px;
+  }
+
+  .fabric-stage {
+    top: 54%;
+    width: min(calc(100% - 24px), 1280px);
   }
 
   .voice-timeline {
