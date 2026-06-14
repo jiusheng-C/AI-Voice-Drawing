@@ -17,24 +17,27 @@ interface SpeechRecognitionLike {
   continuous: boolean
   interimResults: boolean
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
-  onerror: (() => void) | null
+  onerror: ((event?: { error?: string }) => void) | null
   start: () => void
   stop: () => void
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
 
+const DEFAULT_TRANSCRIPT = '画一个蓝色圆形'
+
 export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceControlProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [permission, setPermission] = useState<MicPermission>(() =>
     typeof navigator.mediaDevices === 'undefined' ? 'unsupported' : 'unknown',
   )
-  const [lastTranscript, setLastTranscript] = useState('画一个蓝色圆形')
+  const [lastTranscript, setLastTranscript] = useState(DEFAULT_TRANSCRIPT)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const transcriptRef = useRef('画一个蓝色圆形')
+  const transcriptRef = useRef(DEFAULT_TRANSCRIPT)
+  const finishingRef = useRef(false)
 
   useEffect(() => {
     if (typeof navigator.mediaDevices === 'undefined') {
@@ -55,49 +58,63 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
   }, [])
 
   async function start() {
-    if (typeof navigator.mediaDevices === 'undefined') {
-      if (config.mockMode) {
-        onStatus('当前浏览器不支持麦克风，已使用本地 mock 指令。')
-        await onPlan(createMockCommandPlan(transcriptRef.current, 'voice_mock') as CommandPlan)
-        return
-      }
-      onStatus('当前浏览器不支持麦克风，请换用支持 getUserMedia 的浏览器。')
+    if (isRecording) {
       return
     }
 
+    finishingRef.current = false
+
+    if (typeof navigator.mediaDevices === 'undefined') {
+      setPermission('unsupported')
+      await executeLocalFallback('当前浏览器不支持麦克风，已使用本地 mock 指令继续演示。')
+      return
+    }
+
+    let stream: MediaStream
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
-      setPermission('granted')
-      startSpeechRecognition()
-
-      if (config.mockMode) {
-        startLocalRecording(stream)
-        onStatus('麦克风已授权，正在监听。本地 mock 会在停止后执行识别结果。')
-        return
-      }
-
-      await startBackendRecording(stream)
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch (error) {
       setPermission('denied')
-      const message = error instanceof Error ? error.message : '麦克风授权失败'
-      onStatus(`麦克风授权失败：${message}`)
+      const message = error instanceof Error ? error.message : '浏览器拒绝麦克风授权'
+      await executeLocalFallback(`麦克风授权失败：${message}。已使用本地 mock 指令保证演示闭环。`)
+      return
     }
+
+    streamRef.current = stream
+    setPermission('granted')
+
+    const recognitionStarted = startSpeechRecognition()
+    if (typeof MediaRecorder === 'undefined') {
+      stopTracks()
+      stopRecognition()
+      await executeLocalFallback('当前浏览器不支持 MediaRecorder，已改用本地 mock 指令。')
+      return
+    }
+
+    if (config.mockMode) {
+      startLocalRecording(stream, recognitionStarted)
+      return
+    }
+
+    await startBackendRecording(stream, recognitionStarted)
   }
 
-  function startLocalRecording(stream: MediaStream) {
-    const recorder = typeof MediaRecorder !== 'undefined' ? new MediaRecorder(stream) : null
+  function startLocalRecording(stream: MediaStream, recognitionStarted: boolean) {
+    const recorder = new MediaRecorder(stream)
     recorderRef.current = recorder
-    if (recorder) {
-      recorder.onstop = () => {
-        void finishLocalMock()
-      }
-      recorder.start()
+    recorder.onstop = () => {
+      void finishLocalMock('正在使用本地 mock 解析语音指令。')
     }
+    recorder.start()
     setIsRecording(true)
+    onStatus(
+      recognitionStarted
+        ? '麦克风已授权，正在监听。停止后将执行识别结果。'
+        : '麦克风已授权，但浏览器语音识别不可用。停止后将使用默认 mock 指令。',
+    )
   }
 
-  async function startBackendRecording(stream: MediaStream) {
+  async function startBackendRecording(stream: MediaStream, recognitionStarted: boolean) {
     const socket = new WebSocket(`${config.wsBaseUrl}/api/v1/projects/${projectId}/voice-stream`)
     socketRef.current = socket
     socket.onmessage = async (event) => {
@@ -110,23 +127,38 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
       }
     }
 
-    await new Promise<void>((resolve, reject) => {
-      socket.onopen = () => resolve()
-      socket.onerror = () => reject(new Error('语音 WebSocket 连接失败，请检查连接配置或开启 mock 模式。'))
-    })
-
-    const recorder = typeof MediaRecorder !== 'undefined' ? new MediaRecorder(stream) : null
-    recorderRef.current = recorder
-    if (recorder) {
-      recorder.onstop = () => {
-        stopTracks()
-        socket.send(JSON.stringify({ type: 'voice_end', text: transcriptRef.current || '画一个蓝色圆形' }))
-        onStatus('正在处理语音指令')
-      }
-      recorder.start()
+    try {
+      await new Promise<void>((resolve, reject) => {
+        socket.onopen = () => resolve()
+        socket.onerror = () => reject(new Error('语音 WebSocket 连接失败'))
+      })
+    } catch (error) {
+      closeSocket()
+      await finishLocalMock(
+        `${error instanceof Error ? error.message : '语音 WebSocket 不可用'}，已自动切换到本地 mock 指令。`,
+      )
+      return
     }
+
+    const recorder = new MediaRecorder(stream)
+    recorderRef.current = recorder
+    recorder.onstop = () => {
+      stopTracks()
+      stopRecognition()
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'voice_end', text: transcriptRef.current || DEFAULT_TRANSCRIPT }))
+        onStatus('正在处理语音指令。')
+      } else {
+        void finishLocalMock('语音连接已断开，已自动切换到本地 mock 指令。')
+      }
+    }
+    recorder.start()
     setIsRecording(true)
-    onStatus('麦克风已授权，正在监听。')
+    onStatus(
+      recognitionStarted
+        ? '麦克风已授权，正在通过后端语音通道监听。'
+        : '后端语音通道已连接，但浏览器实时转写不可用；停止后将用默认文本收尾。',
+    )
   }
 
   function startSpeechRecognition() {
@@ -143,7 +175,7 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
     ).webkitSpeechRecognition
 
     if (!recognitionConstructor) {
-      return
+      return false
     }
 
     const recognition = new recognitionConstructor()
@@ -157,32 +189,50 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
         setLastTranscript(latest)
       }
     }
-    recognition.onerror = () => {
-      onStatus('浏览器语音识别不可用，将使用默认 mock 指令。')
+    recognition.onerror = (event) => {
+      onStatus(`浏览器语音识别暂不可用${event?.error ? `：${event.error}` : ''}。停止后会自动使用本地 mock 兜底。`)
     }
     recognitionRef.current = recognition
     try {
       recognition.start()
+      return true
     } catch {
       recognitionRef.current = null
+      return false
     }
   }
 
   function stop() {
     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
       recorderRef.current.stop()
-    } else if (config.mockMode) {
-      void finishLocalMock()
+    } else {
+      void finishLocalMock('没有可用录音流，已使用本地 mock 指令继续。')
     }
     recorderRef.current = null
     setIsRecording(false)
   }
 
-  async function finishLocalMock() {
+  async function finishLocalMock(message: string) {
+    if (finishingRef.current) {
+      return
+    }
+    finishingRef.current = true
+    setIsRecording(false)
     stopTracks()
     stopRecognition()
-    onStatus('正在使用本地 mock 解析语音指令')
-    await onPlan(createMockCommandPlan(transcriptRef.current || '画一个蓝色圆形', 'voice_mock') as CommandPlan)
+    closeSocket()
+    onStatus(message)
+    await onPlan(createMockCommandPlan(transcriptRef.current || DEFAULT_TRANSCRIPT, 'voice_mock') as CommandPlan)
+    finishingRef.current = false
+  }
+
+  async function executeLocalFallback(message: string) {
+    setIsRecording(false)
+    stopTracks()
+    stopRecognition()
+    closeSocket()
+    onStatus(message)
+    await onPlan(createMockCommandPlan(transcriptRef.current || DEFAULT_TRANSCRIPT, 'voice_mock') as CommandPlan)
   }
 
   function stopTracks() {
@@ -197,6 +247,14 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
       // Some browsers throw when recognition was already stopped.
     }
     recognitionRef.current = null
+  }
+
+  function closeSocket() {
+    const socket = socketRef.current
+    if (socket && socket.readyState !== WebSocket.CLOSED && socket.readyState !== WebSocket.CLOSING) {
+      socket.close()
+    }
+    socketRef.current = null
   }
 
   const buttonLabel = isRecording ? '停止语音' : permission === 'granted' ? '开始语音' : '授权麦克风'
