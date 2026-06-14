@@ -23,9 +23,6 @@ func (p MockProvider) Transcribe(ctx context.Context, audio []byte) (ASRResult, 
 	}
 
 	text := strings.TrimSpace(string(audio))
-	if text == "" {
-		text = "画一个蓝色圆形"
-	}
 	return ASRResult{Text: text, Confidence: 0.99, IsFinal: true}, nil
 }
 

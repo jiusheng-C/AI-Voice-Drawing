@@ -66,3 +66,39 @@ func TestVoiceWebSocketMockFlow(t *testing.T) {
 		t.Fatalf("unexpected feedback event %#v", feedback)
 	}
 }
+
+func TestVoiceWebSocketEmptyVoiceDoesNotCreateDefaultCommand(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	RegisterVoiceWSRoutes(router, aihub.NewMockHub())
+
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	url := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/projects/1/voice-stream"
+	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		t.Fatalf("dial websocket: %v", err)
+	}
+	defer conn.Close()
+
+	var ready voiceServerEvent
+	if err := conn.ReadJSON(&ready); err != nil {
+		t.Fatalf("read ready: %v", err)
+	}
+
+	if err := conn.WriteJSON(voiceClientEvent{Type: "voice_end"}); err != nil {
+		t.Fatalf("write empty voice_end event: %v", err)
+	}
+
+	var feedback voiceServerEvent
+	if err := conn.ReadJSON(&feedback); err != nil {
+		t.Fatalf("read feedback event: %v", err)
+	}
+	if feedback.Type != "feedback" {
+		t.Fatalf("expected feedback for empty voice, got %s", feedback.Type)
+	}
+	if strings.Contains(feedback.Feedback, "画一个蓝色圆形") {
+		t.Fatalf("empty voice should not use default drawing command: %#v", feedback)
+	}
+}
