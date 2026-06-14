@@ -59,8 +59,9 @@ export async function saveCanvasState(projectId: number, state: unknown, config 
 }
 
 export async function fetchAIModels(config = defaultRuntimeConfig) {
+  const localModels = getLocalAIModels()
   if (config.mockMode) {
-    return { models: mockModels }
+    return { models: [...mockModels, ...localModels] }
   }
 
   try {
@@ -68,10 +69,11 @@ export async function fetchAIModels(config = defaultRuntimeConfig) {
     if (!response.ok) {
       throw new Error(`Model list failed with status ${response.status}`)
     }
-    return (await response.json()) as { models: AIModel[] }
+    const payload = (await response.json()) as { models: AIModel[] }
+    return { models: [...payload.models, ...localModels] }
   } catch (error) {
     if (config.mockMode) {
-      return { models: mockModels }
+      return { models: [...mockModels, ...localModels] }
     }
     throw error
   }
@@ -638,6 +640,9 @@ export interface AIModel {
   cost_tier: string
   privacy_tier: string
   supports_streaming: boolean
+  endpoint_url?: string
+  auth_configured?: boolean
+  description?: string
 }
 
 const mockModels: AIModel[] = [
@@ -651,9 +656,34 @@ const mockModels: AIModel[] = [
     cost_tier: 'free',
     privacy_tier: 'local',
     supports_streaming: true,
+    description: '低延迟演示识别，适合连续绘图指令。',
   },
   {
     id: 2,
+    model_key: 'mock-asr-accurate',
+    display_name: 'Mock ASR Accurate',
+    capability: 'asr',
+    mode: 'accurate',
+    latency_tier: 'medium',
+    cost_tier: 'free',
+    privacy_tier: 'local',
+    supports_streaming: true,
+    description: '模拟更稳的转写模式，适合较长指令。',
+  },
+  {
+    id: 3,
+    model_key: 'mock-asr-private',
+    display_name: 'Mock ASR Private',
+    capability: 'asr',
+    mode: 'private',
+    latency_tier: 'medium',
+    cost_tier: 'free',
+    privacy_tier: 'local_only',
+    supports_streaming: false,
+    description: '模拟完全本地识别策略，不依赖外部 API。',
+  },
+  {
+    id: 11,
     model_key: 'mock-nlu-rule',
     display_name: 'Mock Rule Parser',
     capability: 'nlu',
@@ -662,9 +692,34 @@ const mockModels: AIModel[] = [
     cost_tier: 'free',
     privacy_tier: 'local',
     supports_streaming: false,
+    description: '规则解析，适合常见绘图命令。',
   },
   {
-    id: 3,
+    id: 12,
+    model_key: 'mock-nlu-accurate',
+    display_name: 'Mock Accurate Planner',
+    capability: 'nlu',
+    mode: 'accurate',
+    latency_tier: 'medium',
+    cost_tier: 'free',
+    privacy_tier: 'local',
+    supports_streaming: false,
+    description: '模拟复杂语义规划，适合多步布局指令。',
+  },
+  {
+    id: 13,
+    model_key: 'mock-nlu-low-cost',
+    display_name: 'Mock Low Cost Parser',
+    capability: 'nlu',
+    mode: 'low_cost',
+    latency_tier: 'low',
+    cost_tier: 'free',
+    privacy_tier: 'local',
+    supports_streaming: false,
+    description: '模拟低成本解析策略，优先覆盖高频短命令。',
+  },
+  {
+    id: 21,
     model_key: 'mock-tts-browser',
     display_name: 'Mock Browser TTS',
     capability: 'tts',
@@ -673,5 +728,74 @@ const mockModels: AIModel[] = [
     cost_tier: 'free',
     privacy_tier: 'browser',
     supports_streaming: false,
+    description: '使用浏览器语音播报能力。',
+  },
+  {
+    id: 22,
+    model_key: 'mock-tts-calm',
+    display_name: 'Mock Calm TTS',
+    capability: 'tts',
+    mode: 'accurate',
+    latency_tier: 'medium',
+    cost_tier: 'free',
+    privacy_tier: 'browser',
+    supports_streaming: false,
+    description: '模拟更清晰的播报风格。',
+  },
+  {
+    id: 23,
+    model_key: 'mock-tts-silent',
+    display_name: 'Mock Silent Feedback',
+    capability: 'tts',
+    mode: 'private',
+    latency_tier: 'low',
+    cost_tier: 'free',
+    privacy_tier: 'local_only',
+    supports_streaming: false,
+    description: '静音反馈模式，仅保留视觉提示。',
   },
 ]
+
+export function getLocalAIModels(): AIModel[] {
+  const saved = localStorage.getItem('ai_voice_drawing_custom_models')
+  if (!saved) {
+    return []
+  }
+  try {
+    const models = JSON.parse(saved) as AIModel[]
+    return Array.isArray(models) ? models : []
+  } catch {
+    return []
+  }
+}
+
+export function saveLocalAIModel(input: {
+  display_name: string
+  capability: 'asr' | 'nlu' | 'tts'
+  mode: string
+  endpoint_url: string
+  model_key: string
+  api_key?: string
+}) {
+  const existing = getLocalAIModels()
+  const next: AIModel = {
+    id: Date.now(),
+    model_key: `custom-${input.capability}-${input.model_key}`.replace(/\s+/g, '-').toLowerCase(),
+    display_name: input.display_name,
+    capability: input.capability,
+    mode: input.mode,
+    latency_tier: 'custom',
+    cost_tier: 'custom',
+    privacy_tier: 'byok',
+    supports_streaming: input.capability === 'asr',
+    endpoint_url: input.endpoint_url,
+    auth_configured: Boolean(input.api_key),
+    description: '自定义 OpenAI 兼容模型配置。当前 MVP 会保存选择，真实代理调用需后端接入。',
+  }
+  const models = [...existing.filter((model) => model.model_key !== next.model_key), next]
+  localStorage.setItem('ai_voice_drawing_custom_models', JSON.stringify(models))
+  if (input.api_key) {
+    sessionStorage.setItem(`ai_voice_drawing_key_${next.model_key}`, input.api_key)
+  }
+  return next
+}
