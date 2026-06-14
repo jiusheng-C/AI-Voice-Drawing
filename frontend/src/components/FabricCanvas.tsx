@@ -133,8 +133,9 @@ function createFabricObject(object: CanvasObjectState): FabricObject | null {
       width: width - 28,
       fill: stringProp(props.text_fill, '#ffffff'),
       fontSize: numberProp(props.font_size, 26),
+      fontWeight: stringProp(props.font_weight, '600'),
       fontFamily: 'Inter, sans-serif',
-      textAlign: 'center',
+      textAlign: textAlignProp(props.text_align, 'center'),
       originX: 'center',
       originY: 'center',
       top: -12,
@@ -181,8 +182,9 @@ function createFabricObject(object: CanvasObjectState): FabricObject | null {
       width: width - 30,
       fill: stringProp(props.text_fill, '#111827'),
       fontSize: numberProp(props.font_size, 24),
+      fontWeight: stringProp(props.font_weight, '500'),
       fontFamily: 'Inter, sans-serif',
-      textAlign: 'left',
+      textAlign: textAlignProp(props.text_align, 'left'),
       originX: 'center',
       originY: 'center',
       top: 8,
@@ -359,8 +361,9 @@ function createFabricObject(object: CanvasObjectState): FabricObject | null {
       ...common,
       width: numberProp(props.width, 280),
       fontSize: numberProp(props.font_size, 32),
+      fontWeight: stringProp(props.font_weight, '500'),
       fontFamily: 'Inter, sans-serif',
-      textAlign: 'center',
+      textAlign: textAlignProp(props.text_align, 'center'),
     })
   }
 
@@ -373,6 +376,10 @@ function numberProp(value: unknown, fallback: number) {
 
 function stringProp(value: unknown, fallback: string) {
   return typeof value === 'string' && value.length > 0 ? value : fallback
+}
+
+function textAlignProp(value: unknown, fallback: 'left' | 'center' | 'right') {
+  return value === 'left' || value === 'center' || value === 'right' ? value : fallback
 }
 
 function isCanvasObjectState(value: unknown): value is CanvasObjectState {
