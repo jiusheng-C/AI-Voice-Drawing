@@ -1,5 +1,6 @@
 import {
   Activity,
+  BookOpen,
   Bot,
   Circle,
   Download,
@@ -61,6 +62,19 @@ const commandTips = [
   '置顶当前对象',
   '清空画布',
   '导出 PNG',
+]
+
+const onboardingSteps = [
+  '先按语音按钮完成麦克风授权，然后说“画一个蓝色圆形”。',
+  '继续说“画一个红色矩形”“把它改成绿色”“撤销”。',
+  '语音链路不可用时，系统会自动使用本地 mock 保证演示闭环。',
+]
+
+const helpGroups = [
+  { title: '创建', commands: ['画一个蓝色圆形', '画一个红色矩形', '写“开始处理”', '创建一个流程节点'] },
+  { title: '编辑', commands: ['把它改成绿色', '向右移动', '放大当前对象', '旋转当前对象'] },
+  { title: '排版', commands: ['所有对象左对齐', '所有对象水平居中', '置顶当前对象', '把所有对象分组'] },
+  { title: '输出', commands: ['撤销', '重做', '导出 PNG', '打开模型中心'] },
 ]
 
 const initialCanvasState: CanvasState = {
@@ -295,6 +309,29 @@ export function App() {
             speak(message)
           }} />
           <TextCommandDebug config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} />
+          <section className="help-module" aria-label="帮助模块">
+            <div className="panel-title">
+              <BookOpen size={17} />
+              <span>帮助模块</span>
+            </div>
+            <ol className="help-steps">
+              {onboardingSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            <div className="help-command-groups">
+              {helpGroups.map((group) => (
+                <div className="help-command-group" key={group.title}>
+                  <strong>{group.title}</strong>
+                  <div className="help-command-list">
+                    {group.commands.map((command) => (
+                      <span key={command}>{command}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
           <section className="command-cheatsheet" aria-label="语音命令速查">
             <div className="panel-title">
               <Layers size={17} />
