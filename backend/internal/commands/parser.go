@@ -30,6 +30,13 @@ func (p RuleParser) ParseText(input string) CommandPlan {
 	if strings.Contains(text, "清空") || strings.Contains(text, "新建画布") {
 		return singleStepPlan(commandID, input, CommandCreateCanvas, nil, map[string]any{"width": 1280, "height": 720, "clear": true}, "已清空画布。")
 	}
+	if strings.Contains(text, "取消分组") || strings.Contains(text, "解组") {
+		target := &CommandTarget{Type: TargetReference, Reference: "selected_object"}
+		return singleStepPlan(commandID, input, CommandUngroupObjects, target, nil, "已识别为取消当前分组。")
+	}
+	if strings.Contains(text, "分组") || strings.Contains(text, "组合") {
+		return singleStepPlan(commandID, input, CommandGroupObjects, nil, nil, "已识别为将画布对象分组。")
+	}
 	if strings.Contains(text, "图片") || strings.Contains(text, "插图") || strings.Contains(text, "占位图") {
 		args := map[string]any{
 			"shape":  "image_placeholder",
@@ -263,6 +270,9 @@ func parseTarget(text string) *CommandTarget {
 	}
 	if strings.Contains(text, "图片") || strings.Contains(text, "插图") || strings.Contains(text, "占位图") {
 		return &CommandTarget{Type: TargetQuery, ObjectType: "image_placeholder"}
+	}
+	if strings.Contains(text, "分组") || strings.Contains(text, "组合") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "group"}
 	}
 	if strings.Contains(text, "线") {
 		return &CommandTarget{Type: TargetQuery, ObjectType: "line"}

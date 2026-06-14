@@ -91,15 +91,28 @@ export function executeCommandPlan(
     }
 
     if (step.type === 'group_objects') {
-      next = { ...next, objects: [] }
-      selected = ''
+      const group = createGroup(next.objects, next.objects.length + 1)
+      if (group) {
+        next = { ...next, objects: [group] }
+        selected = group.object_key
+      }
     }
 
     if (step.type === 'ungroup_objects') {
       const targetKey = resolveTargetKey(step, selected, next)
-      const original = next.objects.find((object) => object.object_key === targetKey)
-      if (original) {
-        const copy = duplicateObject(original, next.objects.length + 1)
+      const target = next.objects.find((object) => object.object_key === targetKey)
+      if (target?.object_type === 'group') {
+        const children = groupChildren(target)
+        next = {
+          ...next,
+          objects: [
+            ...next.objects.filter((object) => object.object_key !== targetKey),
+            ...children.map((child, index) => absolutizeGroupedChild(target, child, index)),
+          ],
+        }
+        selected = next.objects.at(-1)?.object_key ?? ''
+      } else if (target) {
+        const copy = duplicateObject(target, next.objects.length + 1)
         next = { ...next, objects: [...next.objects, copy] }
         selected = copy.object_key
       }
@@ -340,6 +353,113 @@ function duplicateObject(object: CanvasObjectState, index: number): CanvasObject
   }
 }
 
+function createGroup(objects: CanvasObjectState[], index: number): CanvasObjectState | null {
+  if (objects.length === 0) {
+    return null
+  }
+  const bounds = boundsForObjects(objects)
+  const centerX = bounds.left + bounds.width / 2
+  const centerY = bounds.top + bounds.height / 2
+
+  return {
+    object_key: `obj_${Date.now()}_${index}`,
+    object_type: 'group',
+    name: `分组 ${index}`,
+    properties: {
+      left: centerX,
+      top: centerY,
+      width: bounds.width,
+      height: bounds.height,
+      children: objects.map((object) => ({
+        ...object,
+        properties: {
+          ...object.properties,
+          left: numberArg(object.properties.left, centerX) - centerX,
+          top: numberArg(object.properties.top, centerY) - centerY,
+        },
+      })),
+    },
+  }
+}
+
+function groupChildren(object: CanvasObjectState): CanvasObjectState[] {
+  return Array.isArray(object.properties.children)
+    ? object.properties.children.filter(isCanvasObjectState)
+    : []
+}
+
+function absolutizeGroupedChild(group: CanvasObjectState, child: CanvasObjectState, index: number): CanvasObjectState {
+  return {
+    ...child,
+    object_key: `${child.object_key}_ungrouped_${Date.now()}_${index}`,
+    properties: {
+      ...child.properties,
+      left: numberArg(group.properties.left, 0) + numberArg(child.properties.left, 0),
+      top: numberArg(group.properties.top, 0) + numberArg(child.properties.top, 0),
+    },
+  }
+}
+
+function isCanvasObjectState(value: unknown): value is CanvasObjectState {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'object_key' in value &&
+      'object_type' in value &&
+      'properties' in value,
+  )
+}
+
+function boundsForObjects(objects: CanvasObjectState[]) {
+  const boxes = objects.map(objectBounds)
+  const left = Math.min(...boxes.map((box) => box.left))
+  const top = Math.min(...boxes.map((box) => box.top))
+  const right = Math.max(...boxes.map((box) => box.left + box.width))
+  const bottom = Math.max(...boxes.map((box) => box.top + box.height))
+  return {
+    left,
+    top,
+    width: Math.max(1, right - left),
+    height: Math.max(1, bottom - top),
+  }
+}
+
+function objectBounds(object: CanvasObjectState) {
+  const left = numberArg(object.properties.left, 0)
+  const top = numberArg(object.properties.top, 0)
+  const width = objectWidth(object)
+  const height = objectHeight(object)
+  return {
+    left: left - width / 2,
+    top: top - height / 2,
+    width,
+    height,
+  }
+}
+
+function objectWidth(object: CanvasObjectState) {
+  if (object.object_type === 'circle' || object.object_type === 'star') {
+    return numberArg(object.properties.radius, 80) * 2
+  }
+  if (object.object_type === 'ellipse') {
+    return numberArg(object.properties.rx, 130) * 2
+  }
+  return numberArg(object.properties.width, 220)
+}
+
+function objectHeight(object: CanvasObjectState) {
+  if (object.object_type === 'circle' || object.object_type === 'star') {
+    return numberArg(object.properties.radius, 80) * 2
+  }
+  if (object.object_type === 'ellipse') {
+    return numberArg(object.properties.ry, 75) * 2
+  }
+  if (object.object_type === 'line' || object.object_type === 'arrow') {
+    return numberArg(object.properties.stroke_width, 4) + 24
+  }
+  return numberArg(object.properties.height, 140)
+}
+
 function arrangeObject(state: CanvasState, targetKey: string, position: string): CanvasState {
   const target = state.objects.find((object) => object.object_key === targetKey)
   if (!target) {
@@ -397,6 +517,7 @@ function objectName(type: string, index: number) {
     sticky: '便签',
     process: '流程节点',
     image_placeholder: '图片占位',
+    group: '分组',
   }
   return `${names[type] ?? '对象'} ${index}`
 }

@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import { Canvas, Circle, Ellipse, Group, Line, Polygon, Rect, Textbox } from 'fabric'
+import { Canvas, Circle, Ellipse, FabricObject, Group, Line, Polygon, Rect, Textbox } from 'fabric'
 import type { CanvasObjectState, CanvasState } from '../types/canvas'
 
 interface FabricCanvasProps {
@@ -62,7 +62,7 @@ export const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(fu
   )
 })
 
-function createFabricObject(object: CanvasObjectState) {
+function createFabricObject(object: CanvasObjectState): FabricObject | null {
   const props = object.properties
   const left = numberProp(props.left, 120)
   const top = numberProp(props.top, 120)
@@ -81,6 +81,21 @@ function createFabricObject(object: CanvasObjectState) {
     angle,
     originX: 'center' as const,
     originY: 'center' as const,
+  }
+
+  if (object.object_type === 'group') {
+    const children = Array.isArray(props.children) ? props.children.filter(isCanvasObjectState) : []
+    const fabricObjects: FabricObject[] = children
+      .map((child) => createFabricObject(child))
+      .filter((child): child is FabricObject => Boolean(child))
+    return new Group(fabricObjects, {
+      left,
+      top,
+      opacity,
+      angle,
+      originX: 'center',
+      originY: 'center',
+    })
   }
 
   if (object.object_type === 'circle') {
@@ -358,6 +373,16 @@ function numberProp(value: unknown, fallback: number) {
 
 function stringProp(value: unknown, fallback: string) {
   return typeof value === 'string' && value.length > 0 ? value : fallback
+}
+
+function isCanvasObjectState(value: unknown): value is CanvasObjectState {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'object_key' in value &&
+      'object_type' in value &&
+      'properties' in value,
+  )
 }
 
 function createStarPoints(outerRadius: number, innerRadius: number, points: number) {
