@@ -48,6 +48,8 @@ const commandTips = [
   '放大当前对象',
   '旋转当前对象',
   '复制当前对象',
+  '把所有对象分组',
+  '取消分组',
   '删除当前对象',
   '置顶当前对象',
   '清空画布',
@@ -325,6 +327,7 @@ function describeType(value: string) {
     sticky: '便签',
     process: '流程节点',
     image_placeholder: '图片占位',
+    group: '分组',
     text: '文字',
   }
   return types[value] ?? value

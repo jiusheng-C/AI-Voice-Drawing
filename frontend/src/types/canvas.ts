@@ -10,6 +10,7 @@ export type CanvasObjectType =
   | 'sticky'
   | 'process'
   | 'image_placeholder'
+  | 'group'
   | 'text'
 
 export interface CanvasObjectState {

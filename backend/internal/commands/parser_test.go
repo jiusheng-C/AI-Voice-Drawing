@@ -90,6 +90,8 @@ func TestRuleParserObjectOperations(t *testing.T) {
 		{name: "rotate", text: "旋转当前对象", want: CommandRotateObject},
 		{name: "front", text: "置顶当前对象", want: CommandArrangeObject},
 		{name: "export", text: "导出 PNG", want: CommandExportProject},
+		{name: "group", text: "把所有对象分组", want: CommandGroupObjects},
+		{name: "ungroup", text: "取消分组", want: CommandUngroupObjects},
 	}
 
 	for _, tc := range cases {

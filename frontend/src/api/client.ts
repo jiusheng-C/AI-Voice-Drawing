@@ -141,6 +141,22 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
     }
   }
 
+  if (normalized.includes('取消分组') || normalized.includes('解组')) {
+    return {
+      ...base,
+      feedback: '已取消当前分组。',
+      commands: [mockStep('ungroup_objects', undefined, { type: 'reference', reference: 'selected_object' })],
+    }
+  }
+
+  if (normalized.includes('分组') || normalized.includes('组合')) {
+    return {
+      ...base,
+      feedback: '已将画布对象分组。',
+      commands: [mockStep('group_objects')],
+    }
+  }
+
   if (normalized.includes('图片') || normalized.includes('插图') || normalized.includes('占位图')) {
     return {
       ...base,
@@ -501,6 +517,7 @@ function parseShapeType(text: string) {
   if (text.includes('便签') || text.includes('便利贴')) return 'sticky'
   if (text.includes('流程节点') || text.includes('流程框') || text.includes('节点')) return 'process'
   if (text.includes('图片') || text.includes('插图') || text.includes('占位图')) return 'image_placeholder'
+  if (text.includes('分组') || text.includes('组合')) return 'group'
   if (text.includes('文字') || text.includes('文本')) return 'text'
   return ''
 }
