@@ -465,11 +465,93 @@ function arrangeObject(state: CanvasState, targetKey: string, position: string):
   if (!target) {
     return state
   }
+  if (position.startsWith('align_') || position.startsWith('distribute_')) {
+    return arrangeLayout(state, position)
+  }
   const rest = state.objects.filter((object) => object.object_key !== targetKey)
   if (position === 'back' || position === 'bottom') {
     return { ...state, objects: [target, ...rest] }
   }
   return { ...state, objects: [...rest, target] }
+}
+
+function arrangeLayout(state: CanvasState, position: string): CanvasState {
+  if (state.objects.length === 0) {
+    return state
+  }
+  const bounds = boundsForObjects(state.objects)
+  const updates = new Map<string, { left?: number; top?: number }>()
+
+  if (position === 'align_left') {
+    for (const object of state.objects) {
+      updates.set(object.object_key, { left: bounds.left + objectWidth(object) / 2 })
+    }
+  }
+  if (position === 'align_right') {
+    const right = bounds.left + bounds.width
+    for (const object of state.objects) {
+      updates.set(object.object_key, { left: right - objectWidth(object) / 2 })
+    }
+  }
+  if (position === 'align_top') {
+    for (const object of state.objects) {
+      updates.set(object.object_key, { top: bounds.top + objectHeight(object) / 2 })
+    }
+  }
+  if (position === 'align_bottom') {
+    const bottom = bounds.top + bounds.height
+    for (const object of state.objects) {
+      updates.set(object.object_key, { top: bottom - objectHeight(object) / 2 })
+    }
+  }
+  if (position === 'align_center_x') {
+    const centerX = bounds.left + bounds.width / 2
+    for (const object of state.objects) {
+      updates.set(object.object_key, { left: centerX })
+    }
+  }
+  if (position === 'align_center_y') {
+    const centerY = bounds.top + bounds.height / 2
+    for (const object of state.objects) {
+      updates.set(object.object_key, { top: centerY })
+    }
+  }
+  if (position === 'distribute_horizontal') {
+    distributeObjects(state.objects, 'left').forEach((left, objectKey) => updates.set(objectKey, { left }))
+  }
+  if (position === 'distribute_vertical') {
+    distributeObjects(state.objects, 'top').forEach((top, objectKey) => updates.set(objectKey, { top }))
+  }
+
+  if (updates.size === 0) {
+    return state
+  }
+  return {
+    ...state,
+    objects: state.objects.map((object) => {
+      const update = updates.get(object.object_key)
+      return update
+        ? { ...object, properties: { ...object.properties, ...update } }
+        : object
+    }),
+  }
+}
+
+function distributeObjects(objects: CanvasObjectState[], axis: 'left' | 'top') {
+  const updates = new Map<string, number>()
+  if (objects.length < 3) {
+    return updates
+  }
+  const sorted = [...objects].sort(
+    (a, b) => numberArg(a.properties[axis], 0) - numberArg(b.properties[axis], 0),
+  )
+  const first = numberArg(sorted[0].properties[axis], 0)
+  const last = numberArg(sorted[sorted.length - 1].properties[axis], 0)
+  const step = (last - first) / (sorted.length - 1)
+  sorted.forEach((object, index) => {
+    updates.set(object.object_key, first + step * index)
+  })
+  return updates
 }
 
 function updateObject(

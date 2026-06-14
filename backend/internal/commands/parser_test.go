@@ -104,6 +104,32 @@ func TestRuleParserObjectOperations(t *testing.T) {
 	}
 }
 
+func TestRuleParserLayoutOperations(t *testing.T) {
+	cases := []struct {
+		name     string
+		text     string
+		position string
+	}{
+		{name: "align left", text: "所有对象左对齐", position: "align_left"},
+		{name: "align center x", text: "所有对象水平居中", position: "align_center_x"},
+		{name: "align top", text: "所有对象顶端对齐", position: "align_top"},
+		{name: "distribute horizontal", text: "所有对象水平等距分布", position: "distribute_horizontal"},
+		{name: "distribute vertical", text: "所有对象垂直等距分布", position: "distribute_vertical"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			step := firstStep(t, NewRuleParser().ParseText(tc.text))
+			if step.Type != CommandArrangeObject {
+				t.Fatalf("expected arrange_object, got %s", step.Type)
+			}
+			if step.Args["position"] != tc.position {
+				t.Fatalf("expected position %s, got %#v", tc.position, step.Args["position"])
+			}
+		})
+	}
+}
+
 func firstStep(t *testing.T, plan CommandPlan) CommandStep {
 	t.Helper()
 	if len(plan.Commands) != 1 {

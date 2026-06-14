@@ -226,6 +226,9 @@ func (p RuleParser) ParseText(input string) CommandPlan {
 		}
 		return singleStepPlan(commandID, input, CommandRotateObject, parseTarget(text), map[string]any{"angle": angle}, "已识别为旋转对象。")
 	}
+	if position := parseLayoutPosition(text); position != "" {
+		return singleStepPlan(commandID, input, CommandArrangeObject, parseTarget(text), map[string]any{"position": position}, layoutFeedback(position))
+	}
 	if strings.Contains(text, "置顶") || strings.Contains(text, "最上层") || strings.Contains(text, "前移") {
 		return singleStepPlan(commandID, input, CommandArrangeObject, parseTarget(text), map[string]any{"position": "front"}, "已识别为置顶对象。")
 	}
@@ -371,6 +374,57 @@ func parseMoveArgs(text string) map[string]any {
 		dx = 40
 	}
 	return map[string]any{"dx": dx, "dy": dy}
+}
+
+func parseLayoutPosition(text string) string {
+	if strings.Contains(text, "左对齐") {
+		return "align_left"
+	}
+	if strings.Contains(text, "右对齐") {
+		return "align_right"
+	}
+	if strings.Contains(text, "顶端对齐") || strings.Contains(text, "顶部对齐") || strings.Contains(text, "上对齐") {
+		return "align_top"
+	}
+	if strings.Contains(text, "底端对齐") || strings.Contains(text, "底部对齐") || strings.Contains(text, "下对齐") {
+		return "align_bottom"
+	}
+	if strings.Contains(text, "水平居中") || strings.Contains(text, "横向居中") {
+		return "align_center_x"
+	}
+	if strings.Contains(text, "垂直居中") || strings.Contains(text, "纵向居中") {
+		return "align_center_y"
+	}
+	if strings.Contains(text, "水平等距") || strings.Contains(text, "横向等距") || strings.Contains(text, "水平分布") {
+		return "distribute_horizontal"
+	}
+	if strings.Contains(text, "垂直等距") || strings.Contains(text, "纵向等距") || strings.Contains(text, "垂直分布") {
+		return "distribute_vertical"
+	}
+	return ""
+}
+
+func layoutFeedback(position string) string {
+	switch position {
+	case "align_left":
+		return "已识别为左对齐画布对象。"
+	case "align_right":
+		return "已识别为右对齐画布对象。"
+	case "align_top":
+		return "已识别为顶端对齐画布对象。"
+	case "align_bottom":
+		return "已识别为底端对齐画布对象。"
+	case "align_center_x":
+		return "已识别为水平居中对齐画布对象。"
+	case "align_center_y":
+		return "已识别为垂直居中对齐画布对象。"
+	case "distribute_horizontal":
+		return "已识别为水平等距分布画布对象。"
+	case "distribute_vertical":
+		return "已识别为垂直等距分布画布对象。"
+	default:
+		return "已识别为调整对象布局。"
+	}
 }
 
 func extractQuotedText(input string) string {
