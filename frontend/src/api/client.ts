@@ -436,6 +436,15 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
     }
   }
 
+  const layoutPosition = parseLayoutPosition(normalized)
+  if (layoutPosition) {
+    return {
+      ...base,
+      feedback: layoutFeedback(layoutPosition),
+      commands: [mockStep('arrange_object', { position: layoutPosition }, target)],
+    }
+  }
+
   if (normalized.includes('置顶') || normalized.includes('最上层') || normalized.includes('前移')) {
     return {
       ...base,
@@ -531,6 +540,32 @@ function parseMove(text: string) {
     move.dx = 40
   }
   return move
+}
+
+function parseLayoutPosition(text: string) {
+  if (text.includes('左对齐')) return 'align_left'
+  if (text.includes('右对齐')) return 'align_right'
+  if (text.includes('顶端对齐') || text.includes('顶部对齐') || text.includes('上对齐')) return 'align_top'
+  if (text.includes('底端对齐') || text.includes('底部对齐') || text.includes('下对齐')) return 'align_bottom'
+  if (text.includes('水平居中') || text.includes('横向居中')) return 'align_center_x'
+  if (text.includes('垂直居中') || text.includes('纵向居中')) return 'align_center_y'
+  if (text.includes('水平等距') || text.includes('横向等距') || text.includes('水平分布')) return 'distribute_horizontal'
+  if (text.includes('垂直等距') || text.includes('纵向等距') || text.includes('垂直分布')) return 'distribute_vertical'
+  return ''
+}
+
+function layoutFeedback(position: string) {
+  const messages: Record<string, string> = {
+    align_left: '已将画布对象左对齐。',
+    align_right: '已将画布对象右对齐。',
+    align_top: '已将画布对象顶端对齐。',
+    align_bottom: '已将画布对象底端对齐。',
+    align_center_x: '已将画布对象水平居中对齐。',
+    align_center_y: '已将画布对象垂直居中对齐。',
+    distribute_horizontal: '已将画布对象水平等距分布。',
+    distribute_vertical: '已将画布对象垂直等距分布。',
+  }
+  return messages[position] ?? '已调整对象布局。'
 }
 
 function extractText(text: string) {
