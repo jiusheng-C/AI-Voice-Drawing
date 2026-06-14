@@ -130,6 +130,32 @@ func TestRuleParserLayoutOperations(t *testing.T) {
 	}
 }
 
+func TestRuleParserTextFormatOperations(t *testing.T) {
+	cases := []struct {
+		name  string
+		text  string
+		key   string
+		value any
+	}{
+		{name: "content", text: "把文字改成“完成”", key: "text", value: "完成"},
+		{name: "font size", text: "把字号改成48", key: "font_size", value: 48},
+		{name: "bold", text: "文字加粗", key: "font_weight", value: "700"},
+		{name: "align right", text: "文字右对齐", key: "text_align", value: "right"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			step := firstStep(t, NewRuleParser().ParseText(tc.text))
+			if step.Type != CommandUpdateObject {
+				t.Fatalf("expected update_object, got %s", step.Type)
+			}
+			if step.Args[tc.key] != tc.value {
+				t.Fatalf("expected %s=%#v, got %#v", tc.key, tc.value, step.Args[tc.key])
+			}
+		})
+	}
+}
+
 func firstStep(t *testing.T, plan CommandPlan) CommandStep {
 	t.Helper()
 	if len(plan.Commands) != 1 {

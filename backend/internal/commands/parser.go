@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -182,6 +183,9 @@ func (p RuleParser) ParseText(input string) CommandPlan {
 			"stroke_width": 5,
 		}
 		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s线条。", colorName))
+	}
+	if args := parseTextFormatArgs(input, text); len(args) > 0 {
+		return singleStepPlan(commandID, input, CommandUpdateObject, parseTarget(text), args, "已识别为调整文字内容或样式。")
 	}
 	if strings.Contains(text, "文字") || strings.Contains(text, "文本") || strings.Contains(text, "写") {
 		args := map[string]any{
@@ -402,6 +406,64 @@ func parseLayoutPosition(text string) string {
 		return "distribute_vertical"
 	}
 	return ""
+}
+
+func parseTextFormatArgs(input string, text string) map[string]any {
+	args := map[string]any{}
+	quotedText := extractQuotedText(input)
+	if (strings.Contains(text, "文字改成") || strings.Contains(text, "内容改成") || strings.Contains(text, "文字内容")) && quotedText != "文字" {
+		args["text"] = quotedText
+	}
+	fontSize, hasFontSize := parseFirstNumber(text)
+	if strings.Contains(text, "字号") || strings.Contains(text, "字体大小") {
+		if hasFontSize {
+			args["font_size"] = fontSize
+		} else if strings.Contains(text, "小") {
+			args["font_size"] = 24
+		} else {
+			args["font_size"] = 44
+		}
+	}
+	if strings.Contains(text, "文字变大") || strings.Contains(text, "字体变大") || strings.Contains(text, "字号调大") {
+		if hasFontSize {
+			args["font_size"] = fontSize
+		} else {
+			args["font_size"] = 44
+		}
+	}
+	if strings.Contains(text, "文字变小") || strings.Contains(text, "字体变小") || strings.Contains(text, "字号调小") {
+		if hasFontSize {
+			args["font_size"] = fontSize
+		} else {
+			args["font_size"] = 24
+		}
+	}
+	if strings.Contains(text, "文字加粗") || strings.Contains(text, "字体加粗") {
+		args["font_weight"] = "700"
+	}
+	if strings.Contains(text, "取消加粗") || strings.Contains(text, "不要加粗") {
+		args["font_weight"] = "400"
+	}
+	if strings.Contains(text, "文字左对齐") {
+		args["text_align"] = "left"
+	}
+	if strings.Contains(text, "文字居中") || strings.Contains(text, "文字居中对齐") {
+		args["text_align"] = "center"
+	}
+	if strings.Contains(text, "文字右对齐") {
+		args["text_align"] = "right"
+	}
+	return args
+}
+
+func parseFirstNumber(text string) (int, bool) {
+	matched := regexp.MustCompile(`\d+`).FindString(text)
+	if matched == "" {
+		return 0, false
+	}
+	var value int
+	_, err := fmt.Sscanf(matched, "%d", &value)
+	return value, err == nil
 }
 
 func layoutFeedback(position string) string {

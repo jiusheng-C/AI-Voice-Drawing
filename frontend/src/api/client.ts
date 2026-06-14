@@ -374,6 +374,15 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
     }
   }
 
+  const textFormatArgs = parseTextFormatArgs(text, normalized)
+  if (textFormatArgs) {
+    return {
+      ...base,
+      feedback: '已调整文字内容或样式。',
+      commands: [mockStep('update_object', textFormatArgs, target)],
+    }
+  }
+
   if (normalized.includes('文字') || normalized.includes('文本') || normalized.includes('写')) {
     return {
       ...base,
@@ -552,6 +561,45 @@ function parseLayoutPosition(text: string) {
   if (text.includes('水平等距') || text.includes('横向等距') || text.includes('水平分布')) return 'distribute_horizontal'
   if (text.includes('垂直等距') || text.includes('纵向等距') || text.includes('垂直分布')) return 'distribute_vertical'
   return ''
+}
+
+function parseTextFormatArgs(rawText: string, text: string) {
+  const args: Record<string, unknown> = {}
+  const quotedText = extractText(rawText)
+  if ((text.includes('文字改成') || text.includes('内容改成') || text.includes('文字内容')) && quotedText !== '文字') {
+    args.text = quotedText
+  }
+  const fontSize = parseNumber(text)
+  if (text.includes('字号') || text.includes('字体大小')) {
+    args.font_size = fontSize ?? (text.includes('小') ? 24 : 44)
+  }
+  if (text.includes('文字变大') || text.includes('字体变大') || text.includes('字号调大')) {
+    args.font_size = fontSize ?? 44
+  }
+  if (text.includes('文字变小') || text.includes('字体变小') || text.includes('字号调小')) {
+    args.font_size = fontSize ?? 24
+  }
+  if (text.includes('文字加粗') || text.includes('字体加粗')) {
+    args.font_weight = '700'
+  }
+  if (text.includes('取消加粗') || text.includes('不要加粗')) {
+    args.font_weight = '400'
+  }
+  if (text.includes('文字左对齐')) {
+    args.text_align = 'left'
+  }
+  if (text.includes('文字居中') || text.includes('文字居中对齐')) {
+    args.text_align = 'center'
+  }
+  if (text.includes('文字右对齐')) {
+    args.text_align = 'right'
+  }
+  return Object.keys(args).length > 0 ? args : null
+}
+
+function parseNumber(text: string) {
+  const matched = text.match(/\d+/)
+  return matched ? Number(matched[0]) : null
 }
 
 function layoutFeedback(position: string) {
