@@ -43,6 +43,41 @@ func TestRuleParserUndo(t *testing.T) {
 	}
 }
 
+func TestRuleParserCreateEllipseAndArrow(t *testing.T) {
+	ellipse := firstStep(t, NewRuleParser().ParseText("画一个绿色椭圆"))
+	if ellipse.Type != CommandCreateShape || ellipse.Args["shape"] != "ellipse" || ellipse.Args["fill"] != "#16a34a" {
+		t.Fatalf("unexpected ellipse step %#v", ellipse)
+	}
+
+	arrow := firstStep(t, NewRuleParser().ParseText("画一条黑色箭头"))
+	if arrow.Type != CommandCreateShape || arrow.Args["shape"] != "arrow" || arrow.Args["stroke"] != "#111827" {
+		t.Fatalf("unexpected arrow step %#v", arrow)
+	}
+}
+
+func TestRuleParserObjectOperations(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want CommandType
+	}{
+		{name: "delete", text: "删除当前对象", want: CommandDeleteObject},
+		{name: "resize", text: "放大当前对象", want: CommandResizeObject},
+		{name: "rotate", text: "旋转当前对象", want: CommandRotateObject},
+		{name: "front", text: "置顶当前对象", want: CommandArrangeObject},
+		{name: "export", text: "导出 PNG", want: CommandExportProject},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			step := firstStep(t, NewRuleParser().ParseText(tc.text))
+			if step.Type != tc.want {
+				t.Fatalf("expected %s, got %s", tc.want, step.Type)
+			}
+		})
+	}
+}
+
 func firstStep(t *testing.T, plan CommandPlan) CommandStep {
 	t.Helper()
 	if len(plan.Commands) != 1 {

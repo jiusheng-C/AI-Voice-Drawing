@@ -1,4 +1,4 @@
-export type CanvasObjectType = 'circle' | 'rect' | 'text'
+export type CanvasObjectType = 'circle' | 'rect' | 'ellipse' | 'line' | 'arrow' | 'text'
 
 export interface CanvasObjectState {
   object_key: string

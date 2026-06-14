@@ -97,6 +97,7 @@ export async function saveAIPreferences(preferences: unknown[], config = default
 export function createMockCommandPlan(text: string, source: string): CommandPlan {
   const normalized = text.replace(/\s/g, '')
   const color = parseColor(normalized)
+  const target = createTarget(normalized)
   const base = {
     command_id: `cmd_mock_${Date.now()}`,
     source,
@@ -121,6 +122,65 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
       ...base,
       feedback: '已重做。',
       commands: [mockStep('redo')],
+    }
+  }
+
+  if (normalized.includes('导出') || normalized.includes('png') || normalized.includes('PNG')) {
+    return {
+      ...base,
+      feedback: '已准备导出 PNG。',
+      commands: [mockStep('export_project', { format: 'png' })],
+    }
+  }
+
+  if (normalized.includes('清空') || normalized.includes('新建画布')) {
+    return {
+      ...base,
+      feedback: '已清空画布。',
+      commands: [mockStep('create_canvas', { width: 1280, height: 720, clear: true })],
+    }
+  }
+
+  if (normalized.includes('复制') || normalized.includes('副本')) {
+    return {
+      ...base,
+      feedback: '已复制当前对象。',
+      commands: [mockStep('ungroup_objects', undefined, { type: 'reference', reference: 'selected_object' })],
+    }
+  }
+
+  if (normalized.includes('删除') || normalized.includes('移除')) {
+    return {
+      ...base,
+      feedback: '已删除当前对象。',
+      commands: [mockStep('delete_object', undefined, target)],
+    }
+  }
+
+  if (normalized.includes('选择') || normalized.includes('选中')) {
+    return {
+      ...base,
+      feedback: '已选择匹配对象。',
+      commands: [mockStep('select_object', undefined, target)],
+    }
+  }
+
+  if (normalized.includes('椭圆')) {
+    return {
+      ...base,
+      feedback: `已创建${color.name}椭圆。`,
+      commands: [
+        mockStep('create_shape', {
+          shape: 'ellipse',
+          fill: color.hex,
+          x: 640,
+          y: 360,
+          width: 260,
+          height: 150,
+          rx: 130,
+          ry: 75,
+        }),
+      ],
     }
   }
 
@@ -157,6 +217,56 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
     }
   }
 
+  if (normalized.includes('箭头')) {
+    return {
+      ...base,
+      feedback: `已创建${color.name}箭头。`,
+      commands: [
+        mockStep('create_shape', {
+          shape: 'arrow',
+          stroke: color.hex,
+          x: 640,
+          y: 360,
+          width: 280,
+          stroke_width: 5,
+        }),
+      ],
+    }
+  }
+
+  if (normalized.includes('线条') || normalized.includes('直线') || normalized.includes('线段')) {
+    return {
+      ...base,
+      feedback: `已创建${color.name}线条。`,
+      commands: [
+        mockStep('create_shape', {
+          shape: 'line',
+          stroke: color.hex,
+          x: 640,
+          y: 360,
+          width: 260,
+          stroke_width: 5,
+        }),
+      ],
+    }
+  }
+
+  if (normalized.includes('文字') || normalized.includes('文本') || normalized.includes('写')) {
+    return {
+      ...base,
+      feedback: '已创建文字。',
+      commands: [
+        mockStep('create_text', {
+          text: extractText(text),
+          fill: color.hex,
+          x: 640,
+          y: 360,
+          font_size: normalized.includes('大') ? 44 : 32,
+        }),
+      ],
+    }
+  }
+
   if (normalized.includes('改成') || normalized.includes('变成') || normalized.includes('颜色')) {
     return {
       ...base,
@@ -165,9 +275,65 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
         mockStep(
           'update_object',
           { fill: color.hex },
-          { type: 'reference', reference: 'last_object' },
+          target,
         ),
       ],
+    }
+  }
+
+  if (normalized.includes('边框') || normalized.includes('描边')) {
+    return {
+      ...base,
+      feedback: `已把边框改成${color.name}。`,
+      commands: [mockStep('update_object', { stroke: color.hex, stroke_width: 4 }, target)],
+    }
+  }
+
+  if (normalized.includes('透明')) {
+    return {
+      ...base,
+      feedback: '已调整对象透明度。',
+      commands: [mockStep('update_object', { opacity: normalized.includes('不透明') ? 1 : 0.45 }, target)],
+    }
+  }
+
+  if (normalized.includes('放大') || normalized.includes('缩小') || normalized.includes('变大') || normalized.includes('变小')) {
+    return {
+      ...base,
+      feedback: normalized.includes('缩小') || normalized.includes('变小') ? '已缩小当前对象。' : '已放大当前对象。',
+      commands: [mockStep('resize_object', { scale: normalized.includes('缩小') || normalized.includes('变小') ? 0.75 : 1.25 }, target)],
+    }
+  }
+
+  if (normalized.includes('旋转')) {
+    return {
+      ...base,
+      feedback: '已旋转当前对象。',
+      commands: [mockStep('rotate_object', { angle: normalized.includes('逆') ? -15 : 15 }, target)],
+    }
+  }
+
+  if (normalized.includes('置顶') || normalized.includes('最上层') || normalized.includes('前移')) {
+    return {
+      ...base,
+      feedback: '已将对象置顶。',
+      commands: [mockStep('arrange_object', { position: 'front' }, target)],
+    }
+  }
+
+  if (normalized.includes('置底') || normalized.includes('最下层') || normalized.includes('后移')) {
+    return {
+      ...base,
+      feedback: '已将对象置底。',
+      commands: [mockStep('arrange_object', { position: 'back' }, target)],
+    }
+  }
+
+  if (normalized.includes('移动') || normalized.includes('向左') || normalized.includes('向右') || normalized.includes('向上') || normalized.includes('向下')) {
+    return {
+      ...base,
+      feedback: '已移动当前对象。',
+      commands: [mockStep('move_object', parseMove(normalized), target)],
     }
   }
 
@@ -184,7 +350,7 @@ export function createMockCommandPlan(text: string, source: string): CommandPlan
 function mockStep(
   type: CommandType,
   args?: Record<string, unknown>,
-  target?: { type: TargetType; reference?: string },
+  target?: { type: TargetType; reference?: string; object_type?: string; color?: string },
 ) {
   return {
     id: 'step_1',
@@ -203,6 +369,50 @@ function parseColor(text: string) {
   if (text.includes('黑')) return { name: '黑色', hex: '#111827' }
   if (text.includes('白')) return { name: '白色', hex: '#ffffff' }
   return { name: '蓝色', hex: '#2563eb' }
+}
+
+function createTarget(text: string): { type: TargetType; reference?: string; object_type?: string; color?: string } {
+  const shape = parseShapeType(text)
+  if (shape) {
+    return { type: 'query', object_type: shape }
+  }
+  if (text.includes('最后') || text.includes('刚才') || text.includes('最近') || text.includes('它')) {
+    return { type: 'reference', reference: 'last_object' }
+  }
+  return { type: 'reference', reference: 'selected_object' }
+}
+
+function parseShapeType(text: string) {
+  if (text.includes('矩形') || text.includes('方形')) return 'rect'
+  if (text.includes('椭圆')) return 'ellipse'
+  if (text.includes('圆')) return 'circle'
+  if (text.includes('箭头')) return 'arrow'
+  if (text.includes('线')) return 'line'
+  if (text.includes('文字') || text.includes('文本')) return 'text'
+  return ''
+}
+
+function parseMove(text: string) {
+  const move = {
+    dx: text.includes('向左') ? -40 : text.includes('向右') ? 40 : 0,
+    dy: text.includes('向上') ? -40 : text.includes('向下') ? 40 : 0,
+  }
+  if (move.dx === 0 && move.dy === 0) {
+    move.dx = 40
+  }
+  return move
+}
+
+function extractText(text: string) {
+  const quoted = text.match(/[“"](.+?)[”"]/)
+  if (quoted?.[1]) {
+    return quoted[1]
+  }
+  const writeIndex = text.indexOf('写')
+  if (writeIndex >= 0 && writeIndex < text.length - 1) {
+    return text.slice(writeIndex + 1).replace(/[，。,.]/g, '').trim() || '文字'
+  }
+  return '文字'
 }
 
 export interface AIModel {

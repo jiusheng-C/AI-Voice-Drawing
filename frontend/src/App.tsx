@@ -1,4 +1,17 @@
-import { Activity, Bot, Circle, Download, Mic, MousePointer2, PanelRight, Square, Volume2 } from 'lucide-react'
+import {
+  Activity,
+  Bot,
+  Circle,
+  Download,
+  Layers,
+  Mic,
+  MousePointer2,
+  PanelRight,
+  RotateCw,
+  Square,
+  Type,
+  Volume2,
+} from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { defaultRuntimeConfig, saveCanvasState, type RuntimeConfig } from './api/client'
 import { executeCommandPlan } from './commands/executeCommandPlan'
@@ -11,10 +24,28 @@ import type { CanvasState } from './types/canvas'
 import type { CommandPlan } from './types/commands'
 
 const timeline = [
-  { label: 'Listen', state: 'Ready' },
-  { label: 'ASR', state: 'Mock ASR' },
-  { label: 'NLU', state: 'Rule parser' },
-  { label: 'Execute', state: 'Waiting' },
+  { label: '监听', state: '待命' },
+  { label: '识别', state: 'Mock ASR' },
+  { label: '理解', state: '规则解析' },
+  { label: '执行', state: '等待指令' },
+]
+
+const commandTips = [
+  '画一个蓝色圆形',
+  '画一个红色矩形',
+  '画一个绿色椭圆',
+  '画一条黑色箭头',
+  '写“开始处理”',
+  '把它改成绿色',
+  '把边框改成红色',
+  '向右移动',
+  '放大当前对象',
+  '旋转当前对象',
+  '复制当前对象',
+  '删除当前对象',
+  '置顶当前对象',
+  '清空画布',
+  '导出 PNG',
 ]
 
 const initialCanvasState: CanvasState = {
@@ -24,14 +55,14 @@ const initialCanvasState: CanvasState = {
     {
       object_key: 'obj_1',
       object_type: 'circle',
-      name: 'Main circle',
-      properties: { fill: '#2563eb', left: 540, top: 300, radius: 82 },
+      name: '主圆形',
+      properties: { fill: '#2563eb', stroke: '#1e40af', stroke_width: 0, left: 540, top: 300, radius: 82 },
     },
     {
       object_key: 'obj_2',
       object_type: 'rect',
-      name: 'Flow box',
-      properties: { fill: '#dc2626', left: 760, top: 430, width: 250, height: 145 },
+      name: '流程框',
+      properties: { fill: '#dc2626', stroke: '#991b1b', stroke_width: 0, left: 760, top: 430, width: 250, height: 145 },
     },
   ],
 }
@@ -43,7 +74,7 @@ export function App() {
   const [undoStack, setUndoStack] = useState<CanvasState[]>([])
   const [redoStack, setRedoStack] = useState<CanvasState[]>([])
   const [selectedObjectKey, setSelectedObjectKey] = useState(canvasState.objects[0]?.object_key ?? '')
-  const [lastFeedback, setLastFeedback] = useState('Ready')
+  const [lastFeedback, setLastFeedback] = useState('工作台已就绪')
   const [pendingPlan, setPendingPlan] = useState<CommandPlan | null>(null)
   const [runtimeConfig, setRuntimeConfig] = useState<RuntimeConfig>(() => {
     const saved = localStorage.getItem('ai_voice_drawing_runtime_config')
@@ -62,22 +93,22 @@ export function App() {
         id: String(index + 1).padStart(2, '0'),
         key: object.object_key,
         name: object.name ?? object.object_key,
-        type: object.object_type,
-        tone: describeFill(object.properties.fill),
+        type: describeType(object.object_type),
+        tone: describeFill(object.properties.fill ?? object.properties.stroke),
       })),
     [canvasState.objects],
   )
 
   async function applyCommandPlan(plan: CommandPlan) {
     if (plan.requires_clarification || plan.commands.length === 0) {
-      setLastFeedback(plan.feedback || 'Clarification required.')
-      speak(plan.feedback || 'Clarification required.')
+      setLastFeedback(plan.feedback || '需要澄清指令。')
+      speak(plan.feedback || '需要澄清指令。')
       return
     }
     if (!pendingPlan && (plan.requires_confirmation || plan.risk_level === 'high')) {
       setPendingPlan(plan)
-      setLastFeedback(plan.feedback || 'Confirmation required.')
-      speak(plan.feedback || 'Confirmation required.')
+      setLastFeedback(plan.feedback || '需要确认。')
+      speak(plan.feedback || '需要确认。')
       return
     }
     setPendingPlan(null)
@@ -93,6 +124,10 @@ export function App() {
     }
 
     const result = executeCommandPlan(canvasState, selectedObjectKey, plan)
+    if (result.requestedExport === 'png') {
+      exportPNG(plan.feedback || '已导出 PNG。')
+      return
+    }
     setUndoStack((previous) => [...previous, canvasState])
     setRedoStack([])
     setCanvasState(result.state)
@@ -102,7 +137,7 @@ export function App() {
     try {
       await saveCanvasState(projectId, result.state, runtimeConfig)
     } catch {
-      setLastFeedback(`${result.message} Canvas sync pending.`)
+      setLastFeedback(`${result.message} 画布同步待重试。`)
     }
   }
 
@@ -120,50 +155,50 @@ export function App() {
 
   function cancelPendingPlan() {
     setPendingPlan(null)
-    setLastFeedback('Command canceled.')
-    speak('Command canceled.')
+    setLastFeedback('指令已取消。')
+    speak('指令已取消。')
   }
 
   function applyUndo(feedback: string) {
     const previous = undoStack.at(-1)
     if (!previous) {
-      setLastFeedback('Nothing to undo.')
+      setLastFeedback('没有可以撤销的步骤。')
       return
     }
     setUndoStack((stack) => stack.slice(0, -1))
     setRedoStack((stack) => [...stack, canvasState])
     setCanvasState(previous)
     setSelectedObjectKey(previous.objects.at(-1)?.object_key ?? '')
-    setLastFeedback(feedback || 'Undo complete.')
-    speak(feedback || 'Undo complete.')
+    setLastFeedback(feedback || '已撤销。')
+    speak(feedback || '已撤销。')
   }
 
   function applyRedo(feedback: string) {
     const next = redoStack.at(-1)
     if (!next) {
-      setLastFeedback('Nothing to redo.')
+      setLastFeedback('没有可以重做的步骤。')
       return
     }
     setRedoStack((stack) => stack.slice(0, -1))
     setUndoStack((stack) => [...stack, canvasState])
     setCanvasState(next)
     setSelectedObjectKey(next.objects.at(-1)?.object_key ?? '')
-    setLastFeedback(feedback || 'Redo complete.')
-    speak(feedback || 'Redo complete.')
+    setLastFeedback(feedback || '已重做。')
+    speak(feedback || '已重做。')
   }
 
-  function exportPNG() {
+  function exportPNG(feedback = 'PNG 已导出。') {
     const dataURL = fabricRef.current?.exportPNG()
     if (!dataURL) {
-      setLastFeedback('Export is not ready.')
+      setLastFeedback('导出还未准备好。')
       return
     }
     const link = document.createElement('a')
     link.href = dataURL
     link.download = 'ai-voice-drawing.png'
     link.click()
-    setLastFeedback('PNG exported.')
-    speak('PNG exported.')
+    setLastFeedback(feedback)
+    speak(feedback)
   }
 
   return (
@@ -171,20 +206,20 @@ export function App() {
       <header className="topbar">
         <div className="brand">
           <Bot size={20} />
-          <span>AI Voice Drawing</span>
+          <span>AI 语音绘图工作台</span>
         </div>
         <div className="status-strip">
-          <span><Mic size={16} /> Microphone pending</span>
-          <span><Activity size={16} /> {runtimeConfig.mockMode ? 'Mock mode' : 'Backend mode'}</span>
-          <span><Volume2 size={16} /> Voice feedback on</span>
+          <span><Mic size={16} /> 麦克风待授权</span>
+          <span><Activity size={16} /> {runtimeConfig.mockMode ? '本地 mock 模式' : '真实后端模式'}</span>
+          <span><Volume2 size={16} /> 语音反馈开启</span>
         </div>
       </header>
 
       <section className="main-grid">
-        <aside className="object-panel" aria-label="Object navigation">
+        <aside className="object-panel" aria-label="对象导航">
           <div className="panel-title">
             <MousePointer2 size={17} />
-            <span>Objects</span>
+            <span>对象导航</span>
           </div>
           <div className="object-list">
             {objectRows.map((item) => (
@@ -204,11 +239,13 @@ export function App() {
           </div>
         </aside>
 
-        <section className="canvas-area" aria-label="Drawing workspace">
+        <section className="canvas-area" aria-label="绘图工作台">
           <div className="canvas-toolbar">
-            <span><Circle size={16} /> Voice creates circles</span>
-            <span><Square size={16} /> Voice creates rectangles</span>
-            <button type="button" onClick={exportPNG} title="Export PNG">
+            <span><Circle size={16} /> 圆形 / 椭圆</span>
+            <span><Square size={16} /> 矩形 / 线条</span>
+            <span><Type size={16} /> 文字</span>
+            <span><RotateCw size={16} /> 移动 / 缩放 / 旋转</span>
+            <button type="button" onClick={() => exportPNG()} title="导出 PNG">
               <Download size={16} /> PNG
             </button>
           </div>
@@ -217,24 +254,24 @@ export function App() {
           </div>
         </section>
 
-        <aside className="model-panel" aria-label="Model center preview">
+        <aside className="model-panel" aria-label="控制面板">
           <div className="panel-title">
             <PanelRight size={17} />
-            <span>Model Center</span>
+            <span>控制面板</span>
           </div>
           <RuntimeConfigPanel config={runtimeConfig} onChange={updateRuntimeConfig} />
           <ModelCenterPanel config={runtimeConfig} />
           <div className="model-row">
-            <strong>Feedback</strong>
+            <strong>执行反馈</strong>
             <span>{lastFeedback}</span>
           </div>
           {pendingPlan ? (
             <div className="confirmation-panel">
-              <strong>Confirmation</strong>
+              <strong>需要确认</strong>
               <span>{pendingPlan.feedback}</span>
               <div className="confirmation-actions">
-                <button type="button" onClick={confirmPendingPlan}>Confirm</button>
-                <button type="button" onClick={cancelPendingPlan}>Cancel</button>
+                <button type="button" onClick={confirmPendingPlan}>确认</button>
+                <button type="button" onClick={cancelPendingPlan}>取消</button>
               </div>
             </div>
           ) : null}
@@ -243,6 +280,17 @@ export function App() {
             speak(message)
           }} />
           <TextCommandDebug config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} />
+          <section className="command-cheatsheet" aria-label="语音命令速查">
+            <div className="panel-title">
+              <Layers size={17} />
+              <span>语音命令速查</span>
+            </div>
+            <div className="command-chip-list">
+              {commandTips.map((tip) => (
+                <span key={tip}>{tip}</span>
+              ))}
+            </div>
+          </section>
         </aside>
       </section>
 
@@ -258,11 +306,26 @@ export function App() {
   )
 }
 
+function describeType(value: string) {
+  const types: Record<string, string> = {
+    circle: '圆形',
+    rect: '矩形',
+    ellipse: '椭圆',
+    line: '线条',
+    arrow: '箭头',
+    text: '文字',
+  }
+  return types[value] ?? value
+}
+
 function describeFill(value: unknown) {
-  if (value === '#2563eb') return 'Blue'
-  if (value === '#dc2626') return 'Red'
-  if (value === '#16a34a') return 'Green'
-  return typeof value === 'string' ? value : 'Default'
+  if (value === '#2563eb') return '蓝色'
+  if (value === '#dc2626') return '红色'
+  if (value === '#16a34a') return '绿色'
+  if (value === '#facc15') return '黄色'
+  if (value === '#111827') return '黑色'
+  if (value === '#ffffff') return '白色'
+  return typeof value === 'string' ? value : '默认'
 }
 
 function speak(text: string) {
