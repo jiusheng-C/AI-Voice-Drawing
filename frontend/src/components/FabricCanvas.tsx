@@ -100,12 +100,126 @@ function createFabricObject(object: CanvasObjectState) {
     })
   }
 
+  if (object.object_type === 'process') {
+    const width = numberProp(props.width, 260)
+    const height = numberProp(props.height, 120)
+    const box = new Rect({
+      width,
+      height,
+      fill,
+      stroke,
+      strokeWidth,
+      rx: 12,
+      ry: 12,
+      originX: 'center',
+      originY: 'center',
+    })
+    const label = new Textbox(stringProp(props.text, object.name ?? '流程节点'), {
+      width: width - 28,
+      fill: stringProp(props.text_fill, '#ffffff'),
+      fontSize: numberProp(props.font_size, 26),
+      fontFamily: 'Inter, sans-serif',
+      textAlign: 'center',
+      originX: 'center',
+      originY: 'center',
+      top: -12,
+    })
+    return new Group([box, label], {
+      left,
+      top,
+      opacity,
+      angle,
+      originX: 'center',
+      originY: 'center',
+    })
+  }
+
+  if (object.object_type === 'sticky') {
+    const width = numberProp(props.width, 220)
+    const height = numberProp(props.height, 160)
+    const note = new Rect({
+      width,
+      height,
+      fill,
+      stroke,
+      strokeWidth,
+      rx: 8,
+      ry: 8,
+      originX: 'center',
+      originY: 'center',
+    })
+    const fold = new Polygon(
+      [
+        { x: width / 2 - 34, y: -height / 2 },
+        { x: width / 2, y: -height / 2 },
+        { x: width / 2, y: -height / 2 + 34 },
+      ],
+      {
+        fill: '#fde68a',
+        stroke,
+        strokeWidth: 1,
+        originX: 'center',
+        originY: 'center',
+      },
+    )
+    const label = new Textbox(stringProp(props.text, object.name ?? '便签'), {
+      width: width - 30,
+      fill: stringProp(props.text_fill, '#111827'),
+      fontSize: numberProp(props.font_size, 24),
+      fontFamily: 'Inter, sans-serif',
+      textAlign: 'left',
+      originX: 'center',
+      originY: 'center',
+      top: 8,
+    })
+    return new Group([note, fold, label], {
+      left,
+      top,
+      opacity,
+      angle,
+      originX: 'center',
+      originY: 'center',
+    })
+  }
+
   if (object.object_type === 'ellipse') {
     return new Ellipse({
       ...common,
       rx: numberProp(props.rx, numberProp(props.width, 240) / 2),
       ry: numberProp(props.ry, numberProp(props.height, 140) / 2),
     })
+  }
+
+  if (object.object_type === 'triangle') {
+    const width = numberProp(props.width, 180)
+    const height = numberProp(props.height, 160)
+    return new Polygon(
+      [
+        { x: 0, y: -height / 2 },
+        { x: width / 2, y: height / 2 },
+        { x: -width / 2, y: height / 2 },
+      ],
+      common,
+    )
+  }
+
+  if (object.object_type === 'diamond') {
+    const width = numberProp(props.width, 200)
+    const height = numberProp(props.height, 160)
+    return new Polygon(
+      [
+        { x: 0, y: -height / 2 },
+        { x: width / 2, y: 0 },
+        { x: 0, y: height / 2 },
+        { x: -width / 2, y: 0 },
+      ],
+      common,
+    )
+  }
+
+  if (object.object_type === 'star') {
+    const radius = numberProp(props.radius, 86)
+    return new Polygon(createStarPoints(radius, radius * 0.45, 5), common)
   }
 
   if (object.object_type === 'line') {
@@ -159,6 +273,72 @@ function createFabricObject(object: CanvasObjectState) {
     })
   }
 
+  if (object.object_type === 'image_placeholder') {
+    const width = numberProp(props.width, 260)
+    const height = numberProp(props.height, 170)
+    const frame = new Rect({
+      width,
+      height,
+      fill,
+      stroke,
+      strokeWidth: numberProp(props.stroke_width, 2),
+      rx: 8,
+      ry: 8,
+      originX: 'center',
+      originY: 'center',
+    })
+    const mountain = new Polygon(
+      [
+        { x: -width / 2 + 32, y: height / 2 - 28 },
+        { x: -width / 5, y: 10 },
+        { x: 0, y: height / 2 - 28 },
+      ],
+      {
+        fill: '#94a3b8',
+        originX: 'center',
+        originY: 'center',
+      },
+    )
+    const mountainTwo = new Polygon(
+      [
+        { x: -20, y: height / 2 - 28 },
+        { x: width / 4, y: -18 },
+        { x: width / 2 - 28, y: height / 2 - 28 },
+      ],
+      {
+        fill: '#64748b',
+        originX: 'center',
+        originY: 'center',
+      },
+    )
+    const sun = new Circle({
+      left: width / 2 - 50,
+      top: -height / 2 + 42,
+      radius: 16,
+      fill: '#facc15',
+      originX: 'center',
+      originY: 'center',
+    })
+    const label = new Textbox(stringProp(props.text, '图片占位'), {
+      width: width - 30,
+      top: height / 2 - 46,
+      fill: '#475569',
+      fontSize: 18,
+      fontFamily: 'Inter, sans-serif',
+      textAlign: 'center',
+      originX: 'center',
+      originY: 'center',
+    })
+    return new Group([frame, mountain, mountainTwo, sun, label], {
+      left,
+      top,
+      opacity,
+      angle,
+      originX: 'center',
+      originY: 'center',
+    })
+  }
+
   if (object.object_type === 'text') {
     return new Textbox(stringProp(props.text, object.name ?? '文字'), {
       ...common,
@@ -178,4 +358,15 @@ function numberProp(value: unknown, fallback: number) {
 
 function stringProp(value: unknown, fallback: string) {
   return typeof value === 'string' && value.length > 0 ? value : fallback
+}
+
+function createStarPoints(outerRadius: number, innerRadius: number, points: number) {
+  return Array.from({ length: points * 2 }, (_, index) => {
+    const radius = index % 2 === 0 ? outerRadius : innerRadius
+    const angle = (Math.PI / points) * index - Math.PI / 2
+    return {
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+    }
+  })
 }
