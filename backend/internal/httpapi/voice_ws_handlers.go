@@ -68,7 +68,8 @@ func (h voiceWSHandler) stream(ctx *gin.Context) {
 				text = event.Audio
 			}
 			if text == "" {
-				text = "画一个蓝色圆形"
+				_ = conn.WriteJSON(voiceServerEvent{Type: "feedback", Feedback: "没有收到可识别语音，请再说一次。"})
+				continue
 			}
 			if err := h.handleUtterance(ctx, conn, text); err != nil {
 				_ = conn.WriteJSON(voiceServerEvent{Type: "error", Error: err.Error()})

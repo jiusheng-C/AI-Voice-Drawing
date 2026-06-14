@@ -35,3 +35,14 @@ func TestMockProviderCompletesASRNLUTTSLoop(t *testing.T) {
 		t.Fatalf("unexpected TTS result %#v", tts)
 	}
 }
+
+func TestMockProviderKeepsEmptyTranscriptEmpty(t *testing.T) {
+	provider := NewMockProvider()
+	asr, err := provider.Transcribe(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("transcribe empty audio: %v", err)
+	}
+	if asr.Text != "" {
+		t.Fatalf("empty audio should not become a default command: %#v", asr)
+	}
+}

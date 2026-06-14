@@ -24,19 +24,21 @@ interface SpeechRecognitionLike {
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
 
-const DEFAULT_TRANSCRIPT = '画一个蓝色圆形'
+const DEMO_FALLBACK_TRANSCRIPT = '画一个蓝色圆形'
+const TRANSCRIPT_PLACEHOLDER = '等待语音指令'
+const NO_TRANSCRIPT_MESSAGE = '没有识别到有效语音，请再说一次。'
 
 export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceControlProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [permission, setPermission] = useState<MicPermission>(() =>
     typeof navigator.mediaDevices === 'undefined' ? 'unsupported' : 'unknown',
   )
-  const [lastTranscript, setLastTranscript] = useState(DEFAULT_TRANSCRIPT)
+  const [lastTranscript, setLastTranscript] = useState(TRANSCRIPT_PLACEHOLDER)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const transcriptRef = useRef(DEFAULT_TRANSCRIPT)
+  const transcriptRef = useRef('')
   const finishingRef = useRef(false)
 
   useEffect(() => {
@@ -63,6 +65,8 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
     }
 
     finishingRef.current = false
+    transcriptRef.current = ''
+    setLastTranscript('正在聆听...')
 
     if (typeof navigator.mediaDevices === 'undefined') {
       setPermission('unsupported')
@@ -146,7 +150,14 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
       stopTracks()
       stopRecognition()
       if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: 'voice_end', text: transcriptRef.current || DEFAULT_TRANSCRIPT }))
+        const transcript = getTranscript()
+        if (!transcript) {
+          closeSocket()
+          setLastTranscript(TRANSCRIPT_PLACEHOLDER)
+          onStatus(NO_TRANSCRIPT_MESSAGE)
+          return
+        }
+        socket.send(JSON.stringify({ type: 'voice_end', text: transcript }))
         onStatus('正在处理语音指令。')
       } else {
         void finishLocalMock('语音连接已断开，已自动切换到本地 mock 指令。')
@@ -222,7 +233,14 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
     stopRecognition()
     closeSocket()
     onStatus(message)
-    await onPlan(createMockCommandPlan(transcriptRef.current || DEFAULT_TRANSCRIPT, 'voice_mock') as CommandPlan)
+    const transcript = getTranscript()
+    if (!transcript) {
+      setLastTranscript(TRANSCRIPT_PLACEHOLDER)
+      onStatus(NO_TRANSCRIPT_MESSAGE)
+      finishingRef.current = false
+      return
+    }
+    await onPlan(createMockCommandPlan(transcript, 'voice_mock') as CommandPlan)
     finishingRef.current = false
   }
 
@@ -232,7 +250,13 @@ export function VoiceControl({ config, projectId, onPlan, onStatus }: VoiceContr
     stopRecognition()
     closeSocket()
     onStatus(message)
-    await onPlan(createMockCommandPlan(transcriptRef.current || DEFAULT_TRANSCRIPT, 'voice_mock') as CommandPlan)
+    transcriptRef.current = DEMO_FALLBACK_TRANSCRIPT
+    setLastTranscript(DEMO_FALLBACK_TRANSCRIPT)
+    await onPlan(createMockCommandPlan(DEMO_FALLBACK_TRANSCRIPT, 'voice_mock') as CommandPlan)
+  }
+
+  function getTranscript() {
+    return transcriptRef.current.trim()
   }
 
   function stopTracks() {
