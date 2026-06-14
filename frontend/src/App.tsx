@@ -288,61 +288,107 @@ export function App() {
             <PanelRight size={17} />
             <span>控制面板</span>
           </div>
-          <RuntimeConfigPanel config={runtimeConfig} onChange={updateRuntimeConfig} />
-          <ModelCenterPanel config={runtimeConfig} />
-          <div className="model-row">
-            <strong>执行反馈</strong>
-            <span>{lastFeedback}</span>
-          </div>
-          {pendingPlan ? (
-            <div className="confirmation-panel">
-              <strong>需要确认</strong>
-              <span>{pendingPlan.feedback}</span>
-              <div className="confirmation-actions">
-                <button type="button" onClick={confirmPendingPlan}>确认</button>
-                <button type="button" onClick={cancelPendingPlan}>取消</button>
+          <div className="control-section-list">
+            <details className="control-section">
+              <summary className="control-section-toggle">
+                <span className="control-section-title"><Activity size={17} /><strong>连接配置</strong></span>
+                <span className="control-section-summary">{runtimeConfig.mockMode ? '本地 mock 模式' : '真实后端模式'}</span>
+              </summary>
+              <div className="control-section-body">
+                <RuntimeConfigPanel config={runtimeConfig} onChange={updateRuntimeConfig} />
               </div>
-            </div>
-          ) : null}
-          <VoiceControl config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} onStatus={(message) => {
-            setLastFeedback(message)
-            speak(message)
-          }} />
-          <TextCommandDebug config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} />
-          <section className="help-module" aria-label="帮助模块">
-            <div className="panel-title">
-              <BookOpen size={17} />
-              <span>帮助模块</span>
-            </div>
-            <ol className="help-steps">
-              {onboardingSteps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-            <div className="help-command-groups">
-              {helpGroups.map((group) => (
-                <div className="help-command-group" key={group.title}>
-                  <strong>{group.title}</strong>
-                  <div className="help-command-list">
-                    {group.commands.map((command) => (
-                      <span key={command}>{command}</span>
-                    ))}
-                  </div>
+            </details>
+            <details className="control-section">
+              <summary className="control-section-toggle">
+                <span className="control-section-title"><Bot size={17} /><strong>模型中心</strong></span>
+                <span className="control-section-summary">选择 ASR / NLU / TTS</span>
+              </summary>
+              <div className="control-section-body">
+                <ModelCenterPanel config={runtimeConfig} />
+              </div>
+            </details>
+            <details className="control-section">
+              <summary className="control-section-toggle">
+                <span className="control-section-title"><Volume2 size={17} /><strong>执行反馈</strong></span>
+                <span className="control-section-summary">{lastFeedback}</span>
+              </summary>
+              <div className="control-section-body">
+                <div className="model-row">
+                  <strong>最近反馈</strong>
+                  <span>{lastFeedback}</span>
                 </div>
-              ))}
-            </div>
-          </section>
-          <section className="command-cheatsheet" aria-label="语音命令速查">
-            <div className="panel-title">
-              <Layers size={17} />
-              <span>语音命令速查</span>
-            </div>
-            <div className="command-chip-list">
-              {commandTips.map((tip) => (
-                <span key={tip}>{tip}</span>
-              ))}
-            </div>
-          </section>
+                {pendingPlan ? (
+                  <div className="confirmation-panel">
+                    <strong>需要确认</strong>
+                    <span>{pendingPlan.feedback}</span>
+                    <div className="confirmation-actions">
+                      <button type="button" onClick={confirmPendingPlan}>确认</button>
+                      <button type="button" onClick={cancelPendingPlan}>取消</button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </details>
+            <details className="control-section" open>
+              <summary className="control-section-toggle">
+                <span className="control-section-title"><Mic size={17} /><strong>语音控制</strong></span>
+                <span className="control-section-summary">开始、停止和识别状态</span>
+              </summary>
+              <div className="control-section-body">
+                <VoiceControl config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} onStatus={(message) => {
+                  setLastFeedback(message)
+                  speak(message)
+                }} />
+              </div>
+            </details>
+            <details className="control-section">
+              <summary className="control-section-toggle">
+                <span className="control-section-title"><Type size={17} /><strong>文本调试</strong></span>
+                <span className="control-section-summary">输入命令验证解析结果</span>
+              </summary>
+              <div className="control-section-body">
+                <TextCommandDebug config={runtimeConfig} projectId={projectId} onPlan={applyCommandPlan} />
+              </div>
+            </details>
+            <details className="control-section">
+              <summary className="control-section-toggle">
+                <span className="control-section-title"><BookOpen size={17} /><strong>帮助模块</strong></span>
+                <span className="control-section-summary">快速上手和常用说法</span>
+              </summary>
+              <div className="control-section-body">
+                <ol className="help-steps">
+                  {onboardingSteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <div className="help-command-groups">
+                  {helpGroups.map((group) => (
+                    <div className="help-command-group" key={group.title}>
+                      <strong>{group.title}</strong>
+                      <div className="help-command-list">
+                        {group.commands.map((command) => (
+                          <span key={command}>{command}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </details>
+            <details className="control-section">
+              <summary className="control-section-toggle">
+                <span className="control-section-title"><Layers size={17} /><strong>命令速查</strong></span>
+                <span className="control-section-summary">{commandTips.length} 条常用绘图命令</span>
+              </summary>
+              <div className="control-section-body">
+                <div className="command-chip-list">
+                  {commandTips.map((tip) => (
+                    <span key={tip}>{tip}</span>
+                  ))}
+                </div>
+              </div>
+            </details>
+          </div>
         </aside>
       </section>
 
