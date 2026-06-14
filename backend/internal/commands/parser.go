@@ -24,6 +24,36 @@ func (p RuleParser) ParseText(input string) CommandPlan {
 	if strings.Contains(text, "重做") || strings.Contains(text, "恢复") {
 		return singleStepPlan(commandID, input, CommandRedo, nil, nil, "已识别为重做。")
 	}
+	if strings.Contains(text, "导出") || strings.Contains(text, "png") {
+		return singleStepPlan(commandID, input, CommandExportProject, nil, map[string]any{"format": "png"}, "已识别为导出 PNG。")
+	}
+	if strings.Contains(text, "清空") || strings.Contains(text, "新建画布") {
+		return singleStepPlan(commandID, input, CommandCreateCanvas, nil, map[string]any{"width": 1280, "height": 720, "clear": true}, "已清空画布。")
+	}
+	if strings.Contains(text, "复制") || strings.Contains(text, "副本") {
+		target := &CommandTarget{Type: TargetReference, Reference: "selected_object"}
+		return singleStepPlan(commandID, input, CommandUngroupObjects, target, nil, "已识别为复制当前对象。")
+	}
+	if strings.Contains(text, "删除") || strings.Contains(text, "移除") {
+		return singleStepPlan(commandID, input, CommandDeleteObject, parseTarget(text), nil, "已识别为删除对象。")
+	}
+	if strings.Contains(text, "选择") || strings.Contains(text, "选中") {
+		return singleStepPlan(commandID, input, CommandSelectObject, parseTarget(text), nil, "已识别为选择对象。")
+	}
+	if strings.Contains(text, "椭圆") {
+		colorName, colorHex := parseColor(text)
+		args := map[string]any{
+			"shape":  "ellipse",
+			"fill":   colorHex,
+			"x":      640,
+			"y":      360,
+			"width":  260,
+			"height": 150,
+			"rx":     130,
+			"ry":     75,
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s椭圆。", colorName))
+	}
 	if strings.Contains(text, "矩形") || strings.Contains(text, "方形") {
 		colorName, colorHex := parseColor(text)
 		args := map[string]any{
@@ -47,6 +77,30 @@ func (p RuleParser) ParseText(input string) CommandPlan {
 		}
 		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s圆形。", colorName))
 	}
+	if strings.Contains(text, "箭头") {
+		colorName, colorHex := parseColor(text)
+		args := map[string]any{
+			"shape":        "arrow",
+			"stroke":       colorHex,
+			"x":            640,
+			"y":            360,
+			"width":        280,
+			"stroke_width": 5,
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s箭头。", colorName))
+	}
+	if strings.Contains(text, "线条") || strings.Contains(text, "直线") || strings.Contains(text, "线段") {
+		colorName, colorHex := parseColor(text)
+		args := map[string]any{
+			"shape":        "line",
+			"stroke":       colorHex,
+			"x":            640,
+			"y":            360,
+			"width":        260,
+			"stroke_width": 5,
+		}
+		return singleStepPlan(commandID, input, CommandCreateShape, nil, args, fmt.Sprintf("已识别为创建%s线条。", colorName))
+	}
 	if strings.Contains(text, "文字") || strings.Contains(text, "文本") || strings.Contains(text, "写") {
 		args := map[string]any{
 			"text":      extractQuotedText(input),
@@ -59,17 +113,74 @@ func (p RuleParser) ParseText(input string) CommandPlan {
 	}
 	if strings.Contains(text, "改成") || strings.Contains(text, "变成") || strings.Contains(text, "颜色") {
 		colorName, colorHex := parseColor(text)
-		target := &CommandTarget{Type: TargetReference, Reference: "last_object"}
 		args := map[string]any{"fill": colorHex}
-		return singleStepPlan(commandID, input, CommandUpdateObject, target, args, fmt.Sprintf("已识别为把最近对象改成%s。", colorName))
+		return singleStepPlan(commandID, input, CommandUpdateObject, parseTarget(text), args, fmt.Sprintf("已识别为把对象改成%s。", colorName))
+	}
+	if strings.Contains(text, "边框") || strings.Contains(text, "描边") {
+		colorName, colorHex := parseColor(text)
+		args := map[string]any{"stroke": colorHex, "stroke_width": 4}
+		return singleStepPlan(commandID, input, CommandUpdateObject, parseTarget(text), args, fmt.Sprintf("已识别为把边框改成%s。", colorName))
+	}
+	if strings.Contains(text, "透明") {
+		opacity := 0.45
+		if strings.Contains(text, "不透明") {
+			opacity = 1
+		}
+		return singleStepPlan(commandID, input, CommandUpdateObject, parseTarget(text), map[string]any{"opacity": opacity}, "已识别为调整透明度。")
+	}
+	if strings.Contains(text, "放大") || strings.Contains(text, "缩小") || strings.Contains(text, "变大") || strings.Contains(text, "变小") {
+		scale := 1.25
+		feedback := "已识别为放大对象。"
+		if strings.Contains(text, "缩小") || strings.Contains(text, "变小") {
+			scale = 0.75
+			feedback = "已识别为缩小对象。"
+		}
+		return singleStepPlan(commandID, input, CommandResizeObject, parseTarget(text), map[string]any{"scale": scale}, feedback)
+	}
+	if strings.Contains(text, "旋转") {
+		angle := 15
+		if strings.Contains(text, "逆") {
+			angle = -15
+		}
+		return singleStepPlan(commandID, input, CommandRotateObject, parseTarget(text), map[string]any{"angle": angle}, "已识别为旋转对象。")
+	}
+	if strings.Contains(text, "置顶") || strings.Contains(text, "最上层") || strings.Contains(text, "前移") {
+		return singleStepPlan(commandID, input, CommandArrangeObject, parseTarget(text), map[string]any{"position": "front"}, "已识别为置顶对象。")
+	}
+	if strings.Contains(text, "置底") || strings.Contains(text, "最下层") || strings.Contains(text, "后移") {
+		return singleStepPlan(commandID, input, CommandArrangeObject, parseTarget(text), map[string]any{"position": "back"}, "已识别为置底对象。")
 	}
 	if strings.Contains(text, "移动") || strings.Contains(text, "向左") || strings.Contains(text, "向右") || strings.Contains(text, "向上") || strings.Contains(text, "向下") {
-		target := &CommandTarget{Type: TargetReference, Reference: "last_object"}
 		args := parseMoveArgs(text)
-		return singleStepPlan(commandID, input, CommandMoveObject, target, args, "已识别为移动最近对象。")
+		return singleStepPlan(commandID, input, CommandMoveObject, parseTarget(text), args, "已识别为移动对象。")
 	}
 
 	return unclearPlan(commandID, input, "我还不能确定这条指令，请换一种说法。")
+}
+
+func parseTarget(text string) *CommandTarget {
+	if strings.Contains(text, "矩形") || strings.Contains(text, "方形") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "rect"}
+	}
+	if strings.Contains(text, "椭圆") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "ellipse"}
+	}
+	if strings.Contains(text, "圆") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "circle"}
+	}
+	if strings.Contains(text, "箭头") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "arrow"}
+	}
+	if strings.Contains(text, "线") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "line"}
+	}
+	if strings.Contains(text, "文字") || strings.Contains(text, "文本") {
+		return &CommandTarget{Type: TargetQuery, ObjectType: "text"}
+	}
+	if strings.Contains(text, "最后") || strings.Contains(text, "刚才") || strings.Contains(text, "最近") || strings.Contains(text, "它") {
+		return &CommandTarget{Type: TargetReference, Reference: "last_object"}
+	}
+	return &CommandTarget{Type: TargetReference, Reference: "selected_object"}
 }
 
 func singleStepPlan(commandID string, input string, commandType CommandType, target *CommandTarget, args map[string]any, feedback string) CommandPlan {

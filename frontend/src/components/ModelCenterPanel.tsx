@@ -10,7 +10,7 @@ interface ModelCenterPanelProps {
 export function ModelCenterPanel({ config }: ModelCenterPanelProps) {
   const [models, setModels] = useState<AIModel[]>([])
   const [selected, setSelected] = useState<Record<string, number>>({})
-  const [status, setStatus] = useState(config.mockMode ? 'Using local mock models' : 'Loading models from backend')
+  const [status, setStatus] = useState(config.mockMode ? '正在使用本地 mock 模型' : '正在从后端加载模型')
 
   useEffect(() => {
     fetchAIModels(config)
@@ -24,9 +24,9 @@ export function ModelCenterPanel({ config }: ModelCenterPanelProps) {
             }),
           ),
         )
-        setStatus(config.mockMode ? 'Mock models ready' : 'Backend models ready')
+        setStatus(config.mockMode ? 'mock 模型已就绪' : '后端模型已就绪')
       })
-      .catch((error) => setStatus(error instanceof Error ? error.message : 'Model load failed'))
+      .catch((error) => setStatus(error instanceof Error ? error.message : '模型加载失败'))
   }, [config])
 
   const grouped = useMemo(
@@ -49,10 +49,10 @@ export function ModelCenterPanel({ config }: ModelCenterPanelProps) {
     }))
     try {
       await saveAIPreferences(preferences, config)
-      setStatus(config.mockMode ? 'Model mode saved locally' : 'Model preferences saved')
+      setStatus(config.mockMode ? '模型模式已保存到本地' : '模型偏好已保存')
     } catch (error) {
       localStorage.setItem('ai_voice_drawing_model_preferences', JSON.stringify(preferences))
-      setStatus(error instanceof Error ? `${error.message}; saved locally` : 'Backend save failed; saved locally')
+      setStatus(error instanceof Error ? `${error.message}；已保存到本地` : '后端保存失败；已保存到本地')
     }
   }
 
@@ -75,7 +75,7 @@ export function ModelCenterPanel({ config }: ModelCenterPanelProps) {
           ))}
         </fieldset>
       ))}
-      <button type="button" onClick={save}>Save model mode</button>
+      <button type="button" onClick={save}>保存模型模式</button>
       <p>{status}</p>
     </div>
   )
